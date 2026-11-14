@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 import { activeBoard } from "../model/document";
-import { frameExportPixels, imageExportPixels, PICTURE_FILES } from "../model/export";
+import { connectorsForFrame, frameExportPixels, imageExportPixels, PICTURE_FILES } from "../model/export";
 import { useSketchy } from "../store/use-sketchy";
 import { renderEditedImage } from "./raster";
 
@@ -60,9 +60,10 @@ export async function downloadEditedPicture(imageProjectId: string): Promise<voi
   toast.success("Downloaded a PNG of this image at its original size. It is not the editable project.");
 }
 
-/** A PNG of a frame and the objects inside it. Connectors stay on the board. */
+/** A PNG of a frame, the objects inside it, and connectors that touch it. */
 export async function downloadFramePicture(frameId: string): Promise<void> {
-  const frame = activeBoard(useSketchy.getState().history.present).objects.find((object) => object.id === frameId);
+  const board = activeBoard(useSketchy.getState().history.present);
+  const frame = board.objects.find((object) => object.id === frameId);
   if (!frame || frame.type !== "frame") return;
   const { default: Konva } = await import("konva");
   const node = Konva.stages.map((stage) => stage.findOne(`#${frameId}`)).find((found) => Boolean(found));
@@ -83,12 +84,26 @@ export async function downloadFramePicture(frameId: string): Promise<void> {
   const layer = new Konva.Layer();
   off.add(layer);
   layer.add(clone);
+  for (const line of connectorsForFrame(board.objects, frame.id)) {
+    layer.add(
+      new Konva.Arrow({
+        points: [line.from.x, line.from.y, line.to.x, line.to.y],
+        stroke: line.stroke,
+        fill: line.stroke,
+        strokeWidth: line.strokeWidth,
+        pointerLength: 14,
+        pointerWidth: 14,
+        lineCap: "round",
+        listening: false,
+      }),
+    );
+  }
   const pixels = frameExportPixels(frame);
   const url = off.toDataURL({ pixelRatio: 2, mimeType: "image/png" });
   off.destroy();
   host.remove();
   saveUrl(url, PICTURE_FILES.frame);
   toast.success(
-    `Downloaded a ${pixels.width}×${pixels.height} PNG of this frame. Connectors are not in it. It is not the editable project.`,
+    `Downloaded a ${pixels.width}×${pixels.height} PNG of this frame. It is not the editable project.`,
   );
 }

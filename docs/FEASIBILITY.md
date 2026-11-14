@@ -85,7 +85,7 @@ settings/export.json
 - Two-finger gestures and one-finger drawing must not scroll the page (`touch-action: none`, `preventDefault` on the wheel).
 - History is full JSON snapshots. Fine for vector data. It will get heavy if someone snapshots pixel buffers. Blobs stay outside history.
 - Deleting the last use of an image removes that asset from the current project, so a downloaded file does not keep it. Undo snapshots still name the asset, and the blob stays until no snapshot does. A reload does not restore undo, so the bytes are dropped then. A second image that shares the file keeps it.
-- “View PNG” exports the viewport, including only what is on screen. “Save PNG” on an image exports that image at its original pixel size. “Save PNG” on a frame exports the artboard at twice its size. Neither picture is a project, and neither rewrites the original file.
+- “View PNG” exports the viewport, including only what is on screen. “Save PNG” on an image exports that image at its original pixel size. “Save PNG” on a frame exports the artboard at twice its size, including connectors that touch that frame. Neither picture is a project, and neither rewrites the original file.
 - IndexedDB can fail in locked-down browsers. The image still shows until reload; the user is told.
 - Server-side rendering must never import `react-konva` at module top level.
 

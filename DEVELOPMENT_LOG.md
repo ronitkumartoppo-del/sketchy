@@ -214,6 +214,33 @@ Not shipped: a pass on a physical phone.
 - Dev smoke — desktop and mobile, canvas present, no console errors, no horizontal overflow.
 - Production build shows the empty board after the canvas chunk loads.
 
+## Resume
+
+Next checkpoint: a physical phone pass, if one is still required. Do not flatten the asset. Do not treat a PNG or a comparison picture as a project. Branch `grok-development`.
+
+## 2026-11-14 — Frame pictures include connectors that touch the frame
+
+Shipped:
+
+- Save PNG on a frame still writes `sketchy-frame.png` at twice the artboard size.
+- A connector is in that picture when at least one end is inside the frame. The line is drawn in the frame's own coordinates, so a rotated frame does not twist it.
+- A connector whose ends are both outside the frame is left out.
+- The file is still a PNG, not a `.sketchy` project. No image bytes are rewritten.
+
+Not shipped: a pass on a physical phone.
+
+### Verification
+
+- Model — on a frame rotated 90°, the connector between a rectangle and a grouped rectangle lands on their frame-local centers `(20, 25)` and `(40, 10)`. A connector that leaves the frame is included and its outside end is outside the artboard. A connector between two outside objects is omitted.
+- Browser — placed a Story frame, drew a rectangle and an ellipse inside it, and connected them. Recolored that connector coral. The download was 540×960 with 2000 coral pixels and no cobalt. Console had no errors.
+- `npm test` — pass (197 script tests, 93 TypeScript tests, 0 fail).
+- `npx tsc --noEmit` — pass.
+- `npm run build` — pass.
+- Dev smoke — desktop and mobile, canvas present, no console errors, no horizontal overflow.
+- Production build shows the empty board after the canvas chunk loads.
+
+
+
 
 
 
