@@ -97,7 +97,18 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-const OBJECT_TYPES = new Set(["rect", "ellipse", "arrow", "pen", "text", "note", "image"]);
+const OBJECT_TYPES = new Set([
+  "rect",
+  "ellipse",
+  "arrow",
+  "pen",
+  "text",
+  "note",
+  "image",
+  "group",
+  "frame",
+  "connector",
+]);
 
 export function parseProject(raw: string): SketchyProject {
   let data: unknown;
@@ -127,6 +138,15 @@ export function parseProject(raw: string): SketchyProject {
       }
       if (object.type === "image" && (typeof object.assetId !== "string" || typeof object.imageProjectId !== "string")) {
         throw new Error("Sketchy image object is missing its asset or edit project");
+      }
+      if (
+        (object.type === "group" || object.type === "frame") &&
+        (!Array.isArray(object.childIds) || object.childIds.some((id) => typeof id !== "string"))
+      ) {
+        throw new Error("Sketchy group is missing its members");
+      }
+      if (object.type === "connector" && (typeof object.fromId !== "string" || typeof object.toId !== "string")) {
+        throw new Error("Sketchy connector is missing an end");
       }
     }
   }

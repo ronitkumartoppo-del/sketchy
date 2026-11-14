@@ -4,11 +4,12 @@ import { Layer, Rect, Shape, Stage, Transformer } from "react-konva";
 import type Konva from "konva";
 import { toast } from "sonner";
 import { activeBoard } from "../model/document";
-import { screenToWorld, zoomAt, zoomBy, type Point } from "../model/geometry";
+import { screenToWorld, rootObjects, worldOrigin, zoomAt, zoomBy, type Point } from "../model/geometry";
+import { FRAME_PRESETS } from "../model/frames";
 import { createId } from "../model/ids";
 import { addObject } from "../model/ops";
 import { DEFAULT_STROKE_WIDTH, palette } from "../model/palette";
-import type { BoardObject, Camera, Tool } from "../model/types";
+import type { BoardObject, Camera, FrameObject, Tool } from "../model/types";
 import { useSketchy } from "../store/use-sketchy";
 import { SelectionBar } from "../ui/SelectionBar";
 import { ToolRail } from "../ui/ToolRail";
@@ -25,6 +26,7 @@ const pinchRef = { current: false };
 const dragRef = { current: null as Drag | null };
 const draftRef = { current: null as BoardObject | null };
 const editingSink = { current: null as ((id: string | null) => void) | null };
+const framePresetRef = { current: FRAME_PRESETS[0] as (typeof FRAME_PRESETS)[number] };
 
 function setEditingId(id: string | null) {
   editingSink.current?.(id);
@@ -57,6 +59,7 @@ export function MindspaceCanvas() {
   const ready = useSketchy((state) => state.ready);
   const project = useSketchy((state) => state.history.present);
   const tool = useSketchy((state) => state.tool);
+  const linkFrom = useSketchy((state) => state.linkFrom);
   const selection = useSketchy((state) => state.selection);
   const board = activeBoard(project);
   cameraRef.current = board.camera;
@@ -189,7 +192,14 @@ export function MindspaceCanvas() {
       }
       if (event.key === "Escape") {
         store.selectOnly(null);
+        store.pickLink(null);
         setEditingId(null);
+        return;
+      }
+      if (!mod && key === "g") {
+        event.preventDefault();
+        if (event.shiftKey) store.ungroupSelection();
+        else store.groupSelection();
         return;
       }
       if (mod || event.altKey) return;
@@ -202,6 +212,8 @@ export function MindspaceCanvas() {
         a: "arrow",
         t: "text",
         n: "note",
+        l: "link",
+        f: "frame",
       };
       const next = tools[key];
       if (next) {
@@ -249,7 +261,7 @@ export function MindspaceCanvas() {
       .filter((node): node is Konva.Node => {
         if (!node) return false;
         const object = board.objects.find((item) => item.id === node.id());
-        return Boolean(object && !object.locked);
+        return Boolean(object && !object.locked && object.type !== "connector");
       });
     const onlyImage = nodes.length === 1 && board.objects.some((object) => object.id === nodes[0]!.id() && object.type === "image");
     transformer.nodes(nodes);
@@ -293,8 +305,8 @@ export function MindspaceCanvas() {
             <Layer>
               <Rect name="paper" x={-20000} y={-20000} width={40000} height={40000} fill={palette.paper} />
               <DotGrid width={size.width} height={size.height} camera={board.camera} />
-              {board.objects.map((object) => (
-                <BoardNode key={object.id} object={object} listening={tool === "select"} />
+              {rootObjects(board.objects).map((object) => (
+                <BoardNode key={object.id} object={object} listening={tool === "select" || tool === "link"} />
               ))}
               {draft ? <BoardNode object={draft} listening={false} /> : null}
               <Transformer
@@ -354,9 +366,38 @@ export function MindspaceCanvas() {
             <div>
               <p className="font-display text-3xl italic">This board is empty.</p>
               <p className="mt-2 max-w-sm text-sm text-muted">
-                Drop an image, paste a screenshot, or pick a tool. V select, P pen, R rectangle.
+                Drop an image, paste a screenshot, or pick a tool. F adds a frame, L connects, G groups.
               </p>
             </div>
+          </div>
+        ) : null}
+        {tool === "link" ? (
+          <p className="pointer-events-none absolute left-3 top-14 rounded-full bg-surface px-3 py-2 text-xs text-ink">
+            {linkFrom ? "Click the second object." : "Click the first object. Escape cancels."}
+          </p>
+        ) : null}
+        {tool === "frame" ? (
+          <div className="absolute bottom-20 left-3 flex gap-1 md:bottom-14">
+            {FRAME_PRESETS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className={
+                  "rounded-full px-3 py-2 text-xs font-medium " +
+                  (framePresetRef.current.id === item.id ? "bg-ink text-paper" : "bg-surface text-muted")
+                }
+                onClick={() => {
+                  framePresetRef.current = item;
+                  const world = screenToWorld(cameraRef.current, {
+                    x: viewSize.width / 2,
+                    y: viewSize.height / 2,
+                  });
+                  placeFrame(world);
+                }}
+              >
+                {item.name}
+              </button>
+            ))}
           </div>
         ) : null}
         {editing && (editing.type === "text" || editing.type === "note") ? (
@@ -366,9 +407,11 @@ export function MindspaceCanvas() {
             key={editing.id}
             className="absolute z-30 resize-none rounded-md bg-surface/90 p-1 text-ink outline-none"
             style={{
-              left: editing.x * board.camera.scale + board.camera.x,
+              left: (worldOrigin(board.objects, editing.id)?.x ?? editing.x) * board.camera.scale + board.camera.x,
               top:
-                (editing.y + (editing.type === "note" ? 12 : 0)) * board.camera.scale + board.camera.y,
+                ((worldOrigin(board.objects, editing.id)?.y ?? editing.y) + (editing.type === "note" ? 12 : 0)) *
+                  board.camera.scale +
+                board.camera.y,
               width: Math.max(80, editing.width * board.camera.scale),
               height: editing.type === "note" ? Math.max(60, (editing.height - 16) * board.camera.scale) : undefined,
               fontSize: (editing.type === "text" ? editing.fontSize : 16) * board.camera.scale,
@@ -401,6 +444,27 @@ export function MindspaceCanvas() {
   );
 }
 
+function placeFrame(world: Point) {
+  const preset = framePresetRef.current;
+  const frame: FrameObject = {
+    id: createId("obj"),
+    type: "frame",
+    name: preset.name,
+    x: world.x - preset.width / 2,
+    y: world.y - preset.height / 2,
+    rotation: 0,
+    locked: false,
+    width: preset.width,
+    height: preset.height,
+    fill: palette.surface,
+    childIds: [],
+  };
+  const store = useSketchy.getState();
+  store.commit((project) => addObject(project, frame));
+  store.setTool("select");
+  store.selectOnly(frame.id);
+}
+
 function updateDraft(next: BoardObject | null, setDraft: (value: BoardObject | null) => void) {
   draftRef.current = next;
   setDraft(next);
@@ -419,6 +483,14 @@ function onStageDown(
   const middle = "button" in event.evt && event.evt.button === 1;
   if (store.tool === "pan" || spaceRef.current || middle) {
     dragRef.current = { mode: "pan", startScreen: pointer, startCamera: cameraRef.current };
+    return;
+  }
+  if (store.tool === "link") {
+    if (isEmptyTarget(event.target, stage)) store.pickLink(null);
+    return;
+  }
+  if (store.tool === "frame") {
+    placeFrame(screenToWorld(cameraRef.current, pointer));
     return;
   }
   if (store.tool === "select") {

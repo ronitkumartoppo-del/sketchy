@@ -147,6 +147,33 @@ export interface ImageObject extends BaseObject {
   imageProjectId: string;
 }
 
+/** Members stay independent objects. `childIds` are positions in this group's space. */
+export interface GroupObject extends BaseObject {
+  type: "group";
+  width: number;
+  height: number;
+  childIds: string[];
+}
+
+/** A fixed artboard. Children are clipped to it and stored in frame space. */
+export interface FrameObject extends BaseObject {
+  type: "frame";
+  name: string;
+  width: number;
+  height: number;
+  fill: string;
+  childIds: string[];
+}
+
+/** A line between two objects. Endpoints are derived from those objects, not stored pixels. */
+export interface ConnectorObject extends BaseObject {
+  type: "connector";
+  fromId: string;
+  toId: string;
+  stroke: string;
+  strokeWidth: number;
+}
+
 export type BoardObject =
   | RectObject
   | EllipseObject
@@ -154,7 +181,10 @@ export type BoardObject =
   | PenObject
   | TextObject
   | NoteObject
-  | ImageObject;
+  | ImageObject
+  | GroupObject
+  | FrameObject
+  | ConnectorObject;
 
 export interface Board {
   id: string;
@@ -176,6 +206,16 @@ export interface SketchyProject {
   imageProjects: Record<string, ImageEditProject>;
 }
 
-export type Tool = "select" | "pan" | "pen" | "rect" | "ellipse" | "arrow" | "text" | "note";
+export type Tool =
+  | "select"
+  | "pan"
+  | "pen"
+  | "rect"
+  | "ellipse"
+  | "arrow"
+  | "text"
+  | "note"
+  | "link"
+  | "frame";
 
 export type IdFactory = (prefix: string) => string;

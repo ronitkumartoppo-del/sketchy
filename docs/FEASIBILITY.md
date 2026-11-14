@@ -121,6 +121,6 @@ Browser, not just the model:
 
 Not yet run, and not claimed:
 
-- Phone pass: one-finger draw, two-finger pan/zoom, no page scroll.
+- Phone pass on a physical device: one-finger draw, two-finger pan/zoom, no page scroll. A 390px browser layout does not overflow.
 
-A phone device pass is still outstanding.
+Groups, connectors, and frames are in the board model. Grouping does not merge pixels. A connector is a line between two object ids. A frame is a fixed artboard. Image bytes are not rewritten.

@@ -3,9 +3,11 @@ import { useEffect, useState } from "react";
 import { Arrow, Ellipse, Group, Image as KonvaImage, Line, Rect, Text } from "react-konva";
 import type Konva from "konva";
 import { viewNeedsComposite } from "../model/adjust";
-import { bakeBoardTransform } from "../model/geometry";
+import { activeBoard } from "../model/document";
+import { worldCenter } from "../model/geometry";
+import { moveObject, transformOwned } from "../model/ops";
 import { palette } from "../model/palette";
-import type { Adjustments, BoardObject, DrawingObject, ImageMask } from "../model/types";
+import type { Adjustments, BoardObject, DrawingObject, FrameObject, GroupObject, ImageMask } from "../model/types";
 import { useSketchy } from "../store/use-sketchy";
 import { DrawingShape } from "./drawings";
 import { MaskedImage } from "./MaskedImage";
@@ -43,40 +45,39 @@ export function BoardNode({ object, listening }: { object: BoardObject; listenin
   const adjustments = useSketchy((state) =>
     object.type === "image" ? state.history.present.imageProjects[object.imageProjectId]?.adjustments : undefined,
   );
-  const draggable = listening && !object.locked && object.id !== "draft";
+  const objects = useSketchy((state) => activeBoard(state.history.present).objects);
+  const draggable = listening && !object.locked && object.id !== "draft" && object.type !== "connector";
 
   const onSelect = (event: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
     event.cancelBubble = true;
     if (!listening) return;
     const store = useSketchy.getState();
+    if (store.tool === "link") {
+      store.pickLink(object.id);
+      return;
+    }
     const shift = "shiftKey" in event.evt && event.evt.shiftKey;
     if (shift) store.toggleSelect(object.id);
     else store.selectOnly(object.id);
   };
 
   const onDragEnd = (event: Konva.KonvaEventObject<DragEvent>) => {
+    event.cancelBubble = true;
+    if (event.target !== event.currentTarget) return;
     const node = event.target;
-    const current = useSketchy
-      .getState()
-      .history.present.boards.flatMap((board) => board.objects)
-      .find((item) => item.id === object.id);
-    if (!current) return;
-    useSketchy.getState().replaceObject({ ...current, x: node.x(), y: node.y() });
+    useSketchy.getState().commit((project) => moveObject(project, object.id, node.x(), node.y()));
   };
 
   const onTransformEnd = (event: Konva.KonvaEventObject<Event>) => {
+    event.cancelBubble = true;
+    if (event.target !== event.currentTarget) return;
     const node = event.target;
     const scaleX = node.scaleX();
     const scaleY = node.scaleY();
     node.scaleX(1);
     node.scaleY(1);
-    const current = useSketchy
-      .getState()
-      .history.present.boards.flatMap((board) => board.objects)
-      .find((item) => item.id === object.id);
-    if (!current) return;
-    useSketchy.getState().replaceObject(
-      bakeBoardTransform(current, {
+    useSketchy.getState().commit((project) =>
+      transformOwned(project, object.id, {
         x: node.x(),
         y: node.y(),
         rotation: node.rotation(),
@@ -85,6 +86,36 @@ export function BoardNode({ object, listening }: { object: BoardObject; listenin
       }),
     );
   };
+
+  if (object.type === "connector") {
+    const from = worldCenter(objects, object.fromId);
+    const to = worldCenter(objects, object.toId);
+    if (!from || !to) return null;
+    return (
+      <Group
+        id={object.id}
+        name="board-object"
+        listening={listening}
+        draggable={false}
+        onMouseDown={(event) => {
+          event.cancelBubble = true;
+        }}
+        onClick={onSelect}
+        onTap={onSelect}
+      >
+        <Arrow
+          points={[from.x, from.y, to.x, to.y]}
+          stroke={object.stroke}
+          fill={object.stroke}
+          strokeWidth={object.strokeWidth}
+          pointerLength={14}
+          pointerWidth={14}
+          hitStrokeWidth={18}
+          lineCap="round"
+        />
+      </Group>
+    );
+  }
 
   return (
     <Group
@@ -105,15 +136,19 @@ export function BoardNode({ object, listening }: { object: BoardObject; listenin
       onDragEnd={onDragEnd}
       onTransformEnd={onTransformEnd}
     >
-      <NodeShape
-        object={object}
-        image={image}
-        drawings={drawings}
-        mask={mask}
-        adjustments={adjustments}
-        sourceWidth={source?.width}
-        sourceHeight={source?.height}
-      />
+      {object.type === "group" || object.type === "frame" ? (
+        <OwnedBody object={object} listening={listening} objects={objects} />
+      ) : (
+        <NodeShape
+          object={object}
+          image={image}
+          drawings={drawings}
+          mask={mask}
+          adjustments={adjustments}
+          sourceWidth={source?.width}
+          sourceHeight={source?.height}
+        />
+      )}
     </Group>
   );
 
@@ -122,6 +157,57 @@ export function BoardNode({ object, listening }: { object: BoardObject; listenin
     event.cancelBubble = true;
     void navigate({ to: "/studio", search: { edit: object.imageProjectId } });
   }
+}
+
+function OwnedBody({
+  object,
+  listening,
+  objects,
+}: {
+  object: GroupObject | FrameObject;
+  listening: boolean;
+  objects: BoardObject[];
+}) {
+  const children = object.childIds
+    .map((id) => objects.find((item) => item.id === id))
+    .filter((item): item is BoardObject => Boolean(item));
+  const body = (
+    <>
+      {object.type === "frame" ? (
+        <Rect width={object.width} height={object.height} fill={object.fill} stroke={palette.line} strokeWidth={1} />
+      ) : (
+        <Rect
+          width={object.width}
+          height={object.height}
+          fill="rgba(0,0,0,0.01)"
+          stroke={palette.muted}
+          strokeWidth={1}
+          dash={[8, 6]}
+        />
+      )}
+      {children.map((child) => (
+        <BoardNode key={child.id} object={child} listening={listening} />
+      ))}
+    </>
+  );
+  if (object.type !== "frame") return body;
+  return (
+    <>
+      <Text
+        x={0}
+        y={-22}
+        text={object.name}
+        fontSize={16}
+        fontFamily="Fraunces, Georgia, serif"
+        fontStyle="italic"
+        fill={palette.ink}
+        listening={false}
+      />
+      <Group clipX={0} clipY={0} clipWidth={object.width} clipHeight={object.height}>
+        {body}
+      </Group>
+    </>
+  );
 }
 
 function NodeShape({
@@ -265,5 +351,9 @@ function NodeShape({
           />
         </>
       );
+    case "group":
+    case "frame":
+    case "connector":
+      return null;
   }
 }

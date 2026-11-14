@@ -1,6 +1,7 @@
 import {
   ArrowUpRight,
   Circle,
+  Frame,
   Hand,
   ImagePlus,
   MousePointer2,
@@ -8,6 +9,7 @@ import {
   Square,
   StickyNote,
   Type,
+  Waypoints,
 } from "lucide-react";
 import { useRef } from "react";
 import { importImageFiles } from "../canvas/import-image";
@@ -24,6 +26,8 @@ const TOOLS: { id: Tool; label: string; icon: typeof MousePointer2 }[] = [
   { id: "arrow", label: "Arrow (A)", icon: ArrowUpRight },
   { id: "text", label: "Text (T)", icon: Type },
   { id: "note", label: "Note (N)", icon: StickyNote },
+  { id: "link", label: "Connect (L)", icon: Waypoints },
+  { id: "frame", label: "Frame (F)", icon: Frame },
 ];
 
 export function ToolRail() {

@@ -1,4 +1,4 @@
-import type { BoardObject, Camera, DrawingObject } from "./types.ts";
+import type { BoardObject, Camera, DrawingObject, FrameObject, GroupObject } from "./types.ts";
 
 export interface Point {
   x: number;
@@ -145,6 +145,16 @@ export function bakeBoardTransform(
     case "pen":
     case "arrow":
       return { ...obj, ...place, points: scaledPoints(obj.points, t.scaleX, t.scaleY) };
+    case "group":
+    case "frame":
+      return {
+        ...obj,
+        ...place,
+        width: Math.max(8, obj.width * Math.abs(t.scaleX)),
+        height: Math.max(8, obj.height * Math.abs(t.scaleY)),
+      };
+    case "connector":
+      return { ...obj, ...place };
   }
 }
 
@@ -174,3 +184,111 @@ export function bakeDrawingTransform(
   }
   return { ...drawing, ...place, points: scaledPoints(drawing.points ?? [], t.scaleX, t.scaleY) };
 }
+
+export type Box = { x: number; y: number; w: number; h: number };
+
+/** Bounds in the object's parent space. */
+export function boundsOf(object: BoardObject): Box {
+  switch (object.type) {
+    case "rect":
+    case "ellipse":
+    case "note":
+    case "image":
+    case "frame":
+    case "group":
+      return { x: object.x, y: object.y, w: object.width, h: object.height };
+    case "text":
+      return { x: object.x, y: object.y, w: object.width, h: Math.max(8, object.fontSize * 1.25) };
+    case "pen":
+    case "arrow": {
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      for (let i = 0; i < object.points.length; i += 2) {
+        const x = object.points[i] ?? 0;
+        const y = object.points[i + 1] ?? 0;
+        minX = Math.min(minX, x);
+        maxX = Math.max(maxX, x);
+        minY = Math.min(minY, y);
+        maxY = Math.max(maxY, y);
+      }
+      if (!Number.isFinite(minX)) return { x: object.x, y: object.y, w: 1, h: 1 };
+      return {
+        x: object.x + minX,
+        y: object.y + minY,
+        w: Math.max(1, maxX - minX),
+        h: Math.max(1, maxY - minY),
+      };
+    }
+    case "connector":
+      return { x: object.x, y: object.y, w: 0, h: 0 };
+  }
+}
+
+export function findParent(objects: readonly BoardObject[], id: string): GroupObject | FrameObject | undefined {
+  for (const object of objects) {
+    if ((object.type === "group" || object.type === "frame") && object.childIds.includes(id)) return object;
+  }
+  return undefined;
+}
+
+export function rootObjects(objects: readonly BoardObject[]): BoardObject[] {
+  const nested = new Set<string>();
+  for (const object of objects) {
+    if (object.type === "group" || object.type === "frame") {
+      for (const childId of object.childIds) nested.add(childId);
+    }
+  }
+  return objects.filter((object) => !nested.has(object.id));
+}
+
+export function liftPoint(parent: { x: number; y: number; rotation: number }, point: Point): Point {
+  const rad = (parent.rotation * Math.PI) / 180;
+  const c = Math.cos(rad);
+  const s = Math.sin(rad);
+  return {
+    x: parent.x + point.x * c - point.y * s,
+    y: parent.y + point.x * s + point.y * c,
+  };
+}
+
+export function unliftPoint(parent: { x: number; y: number; rotation: number }, world: Point): Point {
+  const dx = world.x - parent.x;
+  const dy = world.y - parent.y;
+  const rad = (-parent.rotation * Math.PI) / 180;
+  const c = Math.cos(rad);
+  const s = Math.sin(rad);
+  return { x: dx * c - dy * s, y: dx * s + dy * c };
+}
+
+export function worldOrigin(objects: readonly BoardObject[], id: string): Point | null {
+  const object = objects.find((item) => item.id === id);
+  if (!object) return null;
+  let point = { x: object.x, y: object.y };
+  let parent = findParent(objects, id);
+  while (parent) {
+    point = liftPoint(parent, point);
+    parent = findParent(objects, parent.id);
+  }
+  return point;
+}
+
+export function worldCenter(objects: readonly BoardObject[], id: string): Point | null {
+  const object = objects.find((item) => item.id === id);
+  if (!object || object.type === "connector") return null;
+  const box = boundsOf(object);
+  let point = { x: box.x + box.w / 2, y: box.y + box.h / 2 };
+  let parent = findParent(objects, id);
+  while (parent) {
+    point = liftPoint(parent, point);
+    parent = findParent(objects, parent.id);
+  }
+  return point;
+}
+
+export function containsInFrame(frame: FrameObject, point: Point): boolean {
+  const local = unliftPoint(frame, point);
+  return local.x >= 0 && local.y >= 0 && local.x <= frame.width && local.y <= frame.height;
+}
+

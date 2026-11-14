@@ -4,7 +4,9 @@ import { createId } from "../model/ids";
 import { createProject } from "../model/document";
 import {
   addBoard,
+  addConnector,
   duplicateObjects,
+  groupObjects,
   preserveView,
   recolorObjects,
   removeObjects,
@@ -12,6 +14,7 @@ import {
   setActiveBoard,
   setCamera,
   setLocked,
+  ungroupObjects,
 } from "../model/ops";
 import type { BoardObject, Camera, SketchyProject, Tool } from "../model/types";
 import { palette } from "../model/palette";
@@ -24,6 +27,7 @@ interface SketchyStore {
   stroke: string;
   fill: string;
   colorTarget: "stroke" | "fill";
+  linkFrom: string | null;
   ready: boolean;
   markReady: () => void;
   hydrate: (project: SketchyProject, urls: Record<string, string>) => void;
@@ -33,6 +37,9 @@ interface SketchyStore {
   paint: (color: string) => void;
   selectOnly: (id: string | null) => void;
   toggleSelect: (id: string) => void;
+  pickLink: (id: string | null) => void;
+  groupSelection: () => void;
+  ungroupSelection: () => void;
   commit: (recipe: (project: SketchyProject) => SketchyProject) => void;
   patch: (recipe: (project: SketchyProject) => SketchyProject) => void;
   undo: () => void;
@@ -61,6 +68,7 @@ export const useSketchy = create<SketchyStore>((set, get) => ({
   stroke: palette.ink,
   fill: "transparent",
   colorTarget: "stroke",
+  linkFrom: null,
   ready: false,
   markReady: () => set({ ready: true }),
   hydrate: (project, urls) =>
@@ -73,6 +81,7 @@ export const useSketchy = create<SketchyStore>((set, get) => ({
   setTool: (tool) =>
     set((state) => ({
       tool,
+      linkFrom: null,
       selection: tool === "select" || tool === "pan" ? state.selection : [],
     })),
   setColorTarget: (colorTarget) => set({ colorTarget }),
@@ -96,6 +105,40 @@ export const useSketchy = create<SketchyStore>((set, get) => ({
         ? state.selection.filter((item) => item !== id)
         : [...state.selection, id],
     })),
+  pickLink: (id) => {
+    const { linkFrom, history, stroke } = get();
+    if (!id) {
+      set({ linkFrom: null });
+      return;
+    }
+    const objects = history.present.boards.flatMap((board) => board.objects);
+    const hit = objects.find((object) => object.id === id);
+    if (!hit || hit.type === "connector") return;
+    if (!linkFrom) {
+      set({ linkFrom: id, selection: [id] });
+      return;
+    }
+    if (linkFrom === id) return;
+    const result = addConnector(history.present, linkFrom, id, stroke, createId);
+    set({
+      history: historyCommit(history, result.project),
+      linkFrom: null,
+      tool: "select",
+      selection: result.id ? [result.id] : [],
+    });
+  },
+  groupSelection: () => {
+    const { history, selection } = get();
+    const result = groupObjects(history.present, selection, createId);
+    if (!result.id) return;
+    set({ history: historyCommit(history, result.project), selection: [result.id] });
+  },
+  ungroupSelection: () => {
+    const { history, selection } = get();
+    const result = ungroupObjects(history.present, selection);
+    if (result.ids.length === 0) return;
+    set({ history: historyCommit(history, result.project), selection: result.ids });
+  },
   commit: (recipe) =>
     set((state) => {
       const present = recipe(state.history.present);

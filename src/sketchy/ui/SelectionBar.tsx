@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowDown, ArrowUp, Copy, Lock, LockOpen, Trash2 } from "lucide-react";
 import { SWATCHES } from "../model/palette";
+import { groupMembers } from "../model/ops";
 import { useSketchy } from "../store/use-sketchy";
 import { IconButton } from "./IconButton";
 
@@ -17,8 +18,11 @@ export function SelectionBar() {
   if (selection.length === 0) return null;
 
   const objects = project.boards.flatMap((board) => board.objects).filter((object) => selection.includes(object.id));
+  const boardObjects = project.boards.flatMap((board) => board.objects);
   const imagesOnly = objects.length > 0 && objects.every((object) => object.type === "image");
   const locked = objects.length > 0 && objects.every((object) => object.locked);
+  const canGroup = groupMembers(boardObjects, selection) !== null;
+  const canUngroup = objects.some((object) => object.type === "group" || object.type === "frame");
 
   return (
     <div className="absolute inset-x-3 bottom-3 z-20 flex flex-wrap items-center justify-center gap-2">
@@ -71,6 +75,24 @@ export function SelectionBar() {
             ))}
           </>
         )}
+        {canGroup ? (
+          <button
+            type="button"
+            className="rounded-full px-3 py-2 text-xs font-medium text-ink"
+            onClick={() => useSketchy.getState().groupSelection()}
+          >
+            Group
+          </button>
+        ) : null}
+        {canUngroup ? (
+          <button
+            type="button"
+            className="rounded-full px-3 py-2 text-xs font-medium text-ink"
+            onClick={() => useSketchy.getState().ungroupSelection()}
+          >
+            Ungroup
+          </button>
+        ) : null}
         <IconButton label="Duplicate" side="top" onClick={duplicate}>
           <Copy className="size-5" />
         </IconButton>

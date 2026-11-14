@@ -140,5 +140,28 @@ Not shipped: groups, connectors, frames. A phone device pass is still not claime
 
 ## Resume
 
-Next checkpoint: groups, connectors, or design frames. Do not flatten the asset. Do not treat a PNG or a comparison picture as a project. Branch `grok-development`.
+Next checkpoint: a physical phone pass, if one is still required. Do not flatten the asset. Do not treat a PNG or a comparison picture as a project. Branch `grok-development`.
+
+## 2026-11-14 — Groups, connectors, and frames
+
+Shipped:
+
+- Group two or more objects that share a parent. They keep their own ids and move with the group. Ungroup puts them back. Delete removes the members. Duplicate copies the members. An image in a group still points at the original blob.
+- Connect two objects. The line is derived from their centers, so moving either end moves the line. Deleting an end deletes the connector.
+- Story, Square, and Wide frames are fixed artboards. A new shape whose center is inside a frame is parented there. Dragging it out returns it to the board. Frames do not resize to fit their contents.
+- Objects in different parents cannot be grouped. That case is a no-op.
+
+Not shipped: a pass on a physical phone.
+
+### Verification
+
+- Model — grouping keeps world centers, a group move shifts both members, ungroup restores board positions, mixed parents are refused, a connector follows a moved end and is removed with that end, duplicating a group that holds an image keeps `byteLength` 40, and deleting the original group does not delete the asset.
+- Browser — placed a Story frame, drew a rectangle inside it and an ellipse outside, and connected them. Dragging the ellipse moved the arrow with it. Grouped the ellipse with another rectangle: the dashed group moved down 80 pixels and the connector still met the ellipse. The rectangle inside the frame stayed put. Console had no errors.
+- Phone width 390 did not widen the page. The frame, the group, and the tool row were on screen. This was a browser viewport, not a device.
+- `npm test` — pass (197 script tests, 88 TypeScript tests, 0 fail).
+- `npx tsc --noEmit` — pass.
+- `npm run build` — pass.
+- Dev smoke — desktop and mobile, canvas present, no console errors, no horizontal overflow.
+- Production build shows the empty board after the canvas chunk loads, including the frame, connect, and group hint.
+
 
