@@ -1,0 +1,83 @@
+import { ArrowDown, ArrowUp, Copy, Lock, LockOpen, Trash2 } from "lucide-react";
+import { SWATCHES } from "../model/palette";
+import { useSketchy } from "../store/use-sketchy";
+import { IconButton } from "./IconButton";
+
+export function SelectionBar() {
+  const selection = useSketchy((state) => state.selection);
+  const project = useSketchy((state) => state.history.present);
+  const colorTarget = useSketchy((state) => state.colorTarget);
+  const setColorTarget = useSketchy((state) => state.setColorTarget);
+  const paint = useSketchy((state) => state.paint);
+  const duplicate = useSketchy((state) => state.duplicate);
+  const toggleLock = useSketchy((state) => state.toggleLock);
+  const reorder = useSketchy((state) => state.reorder);
+  const removeSelection = useSketchy((state) => state.removeSelection);
+  if (selection.length === 0) return null;
+
+  const objects = project.boards.flatMap((board) => board.objects).filter((object) => selection.includes(object.id));
+  const imagesOnly = objects.length > 0 && objects.every((object) => object.type === "image");
+  const locked = objects.length > 0 && objects.every((object) => object.locked);
+
+  return (
+    <div className="absolute inset-x-3 bottom-3 z-20 flex flex-wrap items-center justify-center gap-2">
+      <div className="flex max-w-full flex-wrap items-center gap-1 rounded-2xl border border-line bg-surface px-2 py-1 shadow-sm">
+        {imagesOnly ? (
+          <p className="px-2 text-xs text-muted">Original kept. Image Studio is next.</p>
+        ) : (
+          <>
+            <div className="flex rounded-full bg-paper p-0.5 text-xs">
+              <button
+                type="button"
+                className={
+                  "rounded-full px-2 py-1 " + (colorTarget === "stroke" ? "bg-ink text-paper" : "text-muted")
+                }
+                onClick={() => setColorTarget("stroke")}
+              >
+                Stroke
+              </button>
+              <button
+                type="button"
+                className={"rounded-full px-2 py-1 " + (colorTarget === "fill" ? "bg-ink text-paper" : "text-muted")}
+                onClick={() => setColorTarget("fill")}
+              >
+                Fill
+              </button>
+            </div>
+            {SWATCHES.map((swatch) => (
+              <button
+                key={swatch.id}
+                type="button"
+                aria-label={swatch.label}
+                title={swatch.label}
+                onClick={() => paint(swatch.value)}
+                className="grid size-8 place-items-center rounded-full border border-line"
+                style={{
+                  background:
+                    swatch.value === "transparent"
+                      ? "repeating-linear-gradient(135deg, #fffdf8, #fffdf8 3px, #e3d9c8 3px, #e3d9c8 5px)"
+                      : swatch.value,
+                }}
+              />
+            ))}
+          </>
+        )}
+        <IconButton label="Duplicate" side="top" onClick={duplicate}>
+          <Copy className="size-5" />
+        </IconButton>
+        <IconButton label={locked ? "Unlock" : "Lock"} side="top" onClick={toggleLock}>
+          {locked ? <Lock className="size-5" /> : <LockOpen className="size-5" />}
+        </IconButton>
+        <IconButton label="Bring forward" side="top" onClick={() => reorder("forward")}>
+          <ArrowUp className="size-5" />
+        </IconButton>
+        <IconButton label="Send backward" side="top" onClick={() => reorder("backward")}>
+          <ArrowDown className="size-5" />
+        </IconButton>
+        <IconButton label="Delete" side="top" onClick={removeSelection}>
+          <Trash2 className="size-5" />
+        </IconButton>
+      </div>
+    </div>
+  );
+}
