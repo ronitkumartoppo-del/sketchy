@@ -11,6 +11,6 @@ Branch: `grok-development`
 | 1.1 Images, paste, drop | Verified `749f2a8` | Original blob + edit project. Duplicate shares the asset. |
 | 1.2 Session restore | Implemented | IndexedDB `sketchy`. A reload was not separately proven. |
 | 1.3 Boards, lock, order, text | Verified `749f2a8` | Groups, connectors, and design frames are not in this checkpoint. |
-| 3 Image Studio drawings | Verified in this commit | Independent drawings in source pixels. Recolor, transform, delete, undo. Mindspace overlays them. Original blob is not replaced. Crop, adjustments, and `.sketchy` ZIP are not in this checkpoint. |
+| 3 Image Studio drawings | Verified `be39876` | Independent drawings in source pixels. Recolor, transform, delete, undo. Mindspace overlays them. Original blob is not replaced. Crop, adjustments, and `.sketchy` ZIP are not in this checkpoint. |
 
 Typecheck, production build, and browser QA are recorded in `DEVELOPMENT_LOG.md`.
