@@ -29,6 +29,7 @@ interface SketchyStore {
   hydrate: (project: SketchyProject, urls: Record<string, string>) => void;
   setTool: (tool: Tool) => void;
   setColorTarget: (target: "stroke" | "fill") => void;
+  setInk: (color: string) => void;
   paint: (color: string) => void;
   selectOnly: (id: string | null) => void;
   toggleSelect: (id: string) => void;
@@ -75,6 +76,11 @@ export const useSketchy = create<SketchyStore>((set, get) => ({
       selection: tool === "select" || tool === "pan" ? state.selection : [],
     })),
   setColorTarget: (colorTarget) => set({ colorTarget }),
+  setInk: (color) => {
+    const { colorTarget } = get();
+    if (colorTarget === "stroke") set({ stroke: color });
+    else set({ fill: color });
+  },
   paint: (color) => {
     const { colorTarget, selection, history } = get();
     if (colorTarget === "stroke") set({ stroke: color });

@@ -1,4 +1,4 @@
-import type { BoardObject, Camera } from "./types.ts";
+import type { BoardObject, Camera, DrawingObject } from "./types.ts";
 
 export interface Point {
   x: number;
@@ -146,4 +146,31 @@ export function bakeBoardTransform(
     case "arrow":
       return { ...obj, ...place, points: scaledPoints(obj.points, t.scaleX, t.scaleY) };
   }
+}
+
+/** Bake a Konva transform into source-image pixel space. Does not touch the asset. */
+export function bakeDrawingTransform(
+  drawing: DrawingObject,
+  t: { x: number; y: number; rotation: number; scaleX: number; scaleY: number },
+): DrawingObject {
+  const place = { x: t.x, y: t.y, rotation: t.rotation };
+  const sx = Math.abs(t.scaleX);
+  const sy = Math.abs(t.scaleY);
+  if (drawing.kind === "rect" || drawing.kind === "ellipse") {
+    return {
+      ...drawing,
+      ...place,
+      width: Math.max(4, (drawing.width ?? 0) * sx),
+      height: Math.max(4, (drawing.height ?? 0) * sy),
+    };
+  }
+  if (drawing.kind === "text") {
+    return {
+      ...drawing,
+      ...place,
+      width: Math.max(12, (drawing.width ?? 40) * sx),
+      fontSize: Math.max(8, (drawing.fontSize ?? 28) * sy),
+    };
+  }
+  return { ...drawing, ...place, points: scaledPoints(drawing.points ?? [], t.scaleX, t.scaleY) };
 }

@@ -1,0 +1,39 @@
+import { ArrowUpRight, Circle, Hand, MousePointer2, Pencil, Square, Type } from "lucide-react";
+import type { Tool } from "../model/types";
+import { useSketchy } from "../store/use-sketchy";
+import { IconButton } from "./IconButton";
+
+const TOOLS: { id: Tool; label: string; icon: typeof MousePointer2 }[] = [
+  { id: "select", label: "Select (V)", icon: MousePointer2 },
+  { id: "pan", label: "Pan (H)", icon: Hand },
+  { id: "pen", label: "Pen (P)", icon: Pencil },
+  { id: "rect", label: "Rectangle (R)", icon: Square },
+  { id: "ellipse", label: "Ellipse (O)", icon: Circle },
+  { id: "arrow", label: "Arrow (A)", icon: ArrowUpRight },
+  { id: "text", label: "Text (T)", icon: Type },
+];
+
+export function StudioRail() {
+  const tool = useSketchy((state) => state.tool);
+  const setTool = useSketchy((state) => state.setTool);
+  const side = typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches ? "top" : "right";
+
+  return (
+    <div className="flex h-16 shrink-0 items-center gap-1 overflow-x-auto border-t border-line bg-surface px-2 md:h-full md:w-16 md:flex-col md:overflow-y-auto md:border-t-0 md:border-r md:py-2">
+      {TOOLS.map((item) => {
+        const Icon = item.icon;
+        return (
+          <IconButton
+            key={item.id}
+            label={item.label}
+            side={side}
+            active={tool === item.id}
+            onClick={() => setTool(item.id)}
+          >
+            <Icon className="size-5" />
+          </IconButton>
+        );
+      })}
+    </div>
+  );
+}

@@ -283,6 +283,74 @@ export function recolorDrawing(
   }));
 }
 
+export function replaceDrawing(
+  project: SketchyProject,
+  imageProjectId: string,
+  drawing: DrawingObject,
+): SketchyProject {
+  return updateImageProject(project, imageProjectId, (edit) => ({
+    ...edit,
+    drawings: edit.drawings.map((item) => (item.id === drawing.id ? drawing : item)),
+  }));
+}
+
+export function removeDrawings(
+  project: SketchyProject,
+  imageProjectId: string,
+  ids: readonly string[],
+): SketchyProject {
+  const selected = new Set(ids);
+  return updateImageProject(project, imageProjectId, (edit) => ({
+    ...edit,
+    drawings: edit.drawings.filter((drawing) => !selected.has(drawing.id)),
+  }));
+}
+
+export function recolorDrawings(
+  project: SketchyProject,
+  imageProjectId: string,
+  ids: readonly string[],
+  patch: { stroke?: string; fill?: string },
+): SketchyProject {
+  const selected = new Set(ids);
+  return updateImageProject(project, imageProjectId, (edit) => ({
+    ...edit,
+    drawings: edit.drawings.map((drawing) => {
+      if (!selected.has(drawing.id)) return drawing;
+      if (drawing.kind === "text") {
+        const color = patch.fill ?? patch.stroke;
+        return color ? { ...drawing, fill: color, stroke: color } : drawing;
+      }
+      return {
+        ...drawing,
+        ...(patch.stroke ? { stroke: patch.stroke } : {}),
+        ...(patch.fill ? { fill: patch.fill } : {}),
+      };
+    }),
+  }));
+}
+
+export function duplicateDrawings(
+  project: SketchyProject,
+  imageProjectId: string,
+  ids: readonly string[],
+  createId: IdFactory,
+): { project: SketchyProject; ids: string[] } {
+  const created: string[] = [];
+  const next = updateImageProject(project, imageProjectId, (edit) => {
+    const copies = edit.drawings
+      .filter((drawing) => ids.includes(drawing.id))
+      .map((drawing) => {
+        const id = createId("draw");
+        created.push(id);
+        const nudge = Math.max(12, (drawing.width ?? drawing.fontSize ?? 24) * 0.15);
+        return { ...drawing, id, x: drawing.x + nudge, y: drawing.y + nudge };
+      });
+    return { ...edit, drawings: [...edit.drawings, ...copies] };
+  });
+  return { project: next, ids: created };
+}
+
 export function setImageMask(
   project: SketchyProject,
   imageProjectId: string,

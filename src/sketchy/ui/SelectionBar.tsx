@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { ArrowDown, ArrowUp, Copy, Lock, LockOpen, Trash2 } from "lucide-react";
 import { SWATCHES } from "../model/palette";
 import { useSketchy } from "../store/use-sketchy";
@@ -22,8 +23,16 @@ export function SelectionBar() {
   return (
     <div className="absolute inset-x-3 bottom-3 z-20 flex flex-wrap items-center justify-center gap-2">
       <div className="flex max-w-full flex-wrap items-center gap-1 rounded-2xl border border-line bg-surface px-2 py-1 shadow-sm">
-        {imagesOnly ? (
-          <p className="px-2 text-xs text-muted">Original kept. Image Studio is next.</p>
+        {objects.length === 1 && objects[0]?.type === "image" ? (
+          <Link
+            to="/studio"
+            search={{ edit: objects[0].imageProjectId }}
+            className="rounded-full bg-accent px-3 py-2 text-xs font-medium text-paper"
+          >
+            Edit image
+          </Link>
+        ) : imagesOnly ? (
+          <p className="px-2 text-xs text-muted">Select one image. The original file stays untouched.</p>
         ) : (
           <>
             <div className="flex rounded-full bg-paper p-0.5 text-xs">

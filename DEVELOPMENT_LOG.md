@@ -29,4 +29,30 @@ Canvas apps are treated as game unfurls by the share-card check, so `site.json` 
 
 ## Resume
 
-Next checkpoint: Phase 2 board engine — groups and connectors — or Phase 3 drawing engine inside Image Studio, starting from `imageProjects` already stored on each image. Do not flatten the asset. Branch `grok-development`.
+Next checkpoint: freeform crop on the image edit project (`mask` only, original blob stays), or `.sketchy` ZIP once crop is honest. Do not flatten the asset. Branch `grok-development`.
+
+## 2026-11-14 — Image Studio drawings
+
+Pushed Mindspace foundation as `749f2a8` on `grok-development`.
+
+Shipped:
+
+- Image Studio opens one image edit project (Mindspace “Edit image”, double-click, or the studio list).
+- Pen, rectangle, ellipse, arrow, and text are `DrawingObject`s in source-image pixels.
+- Each drawing can be moved, resized, rotated, recolored, duplicated, and deleted without changing `assets[].byteLength` or dimensions.
+- Mindspace draws those marks on top of the original, scaled to the board object. They are not baked into the blob.
+- Undo/redo is the same project history.
+
+Not shipped: freeform crop, adjustments, Compare interaction, `.sketchy` ZIP.
+
+### Verification
+
+- `npm test` — pass (197 script tests, 73 TypeScript tests, 0 fail).
+- `npx tsc --noEmit` — pass.
+- `npm run build` — pass.
+- Dev smoke — desktop and mobile, canvas present, no console errors, no horizontal overflow.
+- Interactive — uploaded a PNG, drew a rectangle in Image Studio, returned to Mindspace with the mark on the image and the original stripe still visible. Undo restored the previous stroke.
+- Production build shows the same empty board after the canvas chunk loads. The first automated snapshot caught “Opening Mindspace…”. A follow-up check showed one canvas and a clean console.
+- IndexedDB restore across a reload is still not separately proven.
+- Freeform crop and `.sketchy` round-trip are not claimed.
+

@@ -1,10 +1,12 @@
+import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Arrow, Ellipse, Group, Image as KonvaImage, Line, Rect, Text } from "react-konva";
 import type Konva from "konva";
 import { bakeBoardTransform } from "../model/geometry";
 import { palette } from "../model/palette";
-import type { BoardObject } from "../model/types";
+import type { BoardObject, DrawingObject } from "../model/types";
 import { useSketchy } from "../store/use-sketchy";
+import { DrawingShape } from "./drawings";
 
 function useHtmlImage(url: string | undefined): HTMLImageElement | null {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
@@ -24,8 +26,15 @@ function useHtmlImage(url: string | undefined): HTMLImageElement | null {
 }
 
 export function BoardNode({ object, listening }: { object: BoardObject; listening: boolean }) {
+  const navigate = useNavigate();
   const url = useSketchy((state) => (object.type === "image" ? state.assetUrls[object.assetId] : undefined));
   const image = useHtmlImage(url);
+  const drawings = useSketchy((state) =>
+    object.type === "image" ? state.history.present.imageProjects[object.imageProjectId]?.drawings : undefined,
+  );
+  const source = useSketchy((state) =>
+    object.type === "image" ? state.history.present.assets[object.assetId] : undefined,
+  );
   const draggable = listening && !object.locked && object.id !== "draft";
 
   const onSelect = (event: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
@@ -83,15 +92,35 @@ export function BoardNode({ object, listening }: { object: BoardObject; listenin
       }}
       onClick={onSelect}
       onTap={onSelect}
+      onDblClick={(event) => openStudio(event)}
+      onDblTap={(event) => openStudio(event)}
       onDragEnd={onDragEnd}
       onTransformEnd={onTransformEnd}
     >
-      <NodeShape object={object} image={image} />
+      <NodeShape object={object} image={image} drawings={drawings} sourceWidth={source?.width} sourceHeight={source?.height} />
     </Group>
   );
+
+  function openStudio(event: Konva.KonvaEventObject<MouseEvent | TouchEvent>) {
+    if (object.type !== "image") return;
+    event.cancelBubble = true;
+    void navigate({ to: "/studio", search: { edit: object.imageProjectId } });
+  }
 }
 
-function NodeShape({ object, image }: { object: BoardObject; image: HTMLImageElement | null }) {
+function NodeShape({
+  object,
+  image,
+  drawings,
+  sourceWidth,
+  sourceHeight,
+}: {
+  object: BoardObject;
+  image: HTMLImageElement | null;
+  drawings?: DrawingObject[];
+  sourceWidth?: number;
+  sourceHeight?: number;
+}) {
   switch (object.type) {
     case "rect":
       return (
@@ -171,7 +200,26 @@ function NodeShape({ object, image }: { object: BoardObject; image: HTMLImageEle
       );
     case "image":
       return image ? (
-        <KonvaImage image={image} width={object.width} height={object.height} />
+        <>
+          <KonvaImage image={image} width={object.width} height={object.height} />
+          {drawings && drawings.length > 0 && sourceWidth && sourceHeight ? (
+            <Group
+              listening={false}
+              scaleX={object.width / sourceWidth}
+              scaleY={object.height / sourceHeight}
+              clipX={0}
+              clipY={0}
+              clipWidth={sourceWidth}
+              clipHeight={sourceHeight}
+            >
+              {drawings.map((drawing) => (
+                <Group key={drawing.id} x={drawing.x} y={drawing.y} rotation={drawing.rotation} listening={false}>
+                  <DrawingShape drawing={drawing} />
+                </Group>
+              ))}
+            </Group>
+          ) : null}
+        </>
       ) : (
         <>
           <Rect width={object.width} height={object.height} fill={palette.line} />
