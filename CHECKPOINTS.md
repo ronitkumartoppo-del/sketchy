@@ -15,6 +15,6 @@ Branch: `grok-development`
 | 4 Freeform crop | Verified `f6a24d8` | Lasso, polygon, and rectangle write `mask` only. Keep-inside and cut-out. Drawings stay. Browser check: lasso removed the unselected half and undo restored it. |
 | 7 `.sketchy` file | Verified `fc39ac0` | ZIP with `manifest.json` and original blobs. Open replaces the browser session. Round-trip kept the mask, the drawing, and the pixels after a reload. Adjustments are not in this checkpoint. |
 | 8 Compare | Verified `4be4340` | Side by side and fade overlay. Original versus current, or two session images. Download is `comparison.png`, not a project. Original blobs unchanged. |
-| 9 Adjustments | Shipped | Brightness, contrast, color, blur, pixelate, grayscale, flip, and rotation. Drawn after the original and before the mask. The file bytes stay put. Hash recorded after push. |
+| 9 Adjustments | Verified `00e9491` | Brightness, contrast, color, blur, pixelate, grayscale, flip, and rotation. Drawn after the original and before the mask. The file bytes stay put. |
 
 Typecheck, production build, and browser QA are recorded in `DEVELOPMENT_LOG.md`.
