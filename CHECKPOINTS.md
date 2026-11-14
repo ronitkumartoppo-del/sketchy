@@ -16,6 +16,6 @@ Branch: `grok-development`
 | 7 `.sketchy` file | Verified `fc39ac0` | ZIP with `manifest.json` and original blobs. Open replaces the browser session. Round-trip kept the mask, the drawing, and the pixels after a reload. Adjustments are not in this checkpoint. |
 | 8 Compare | Verified `4be4340` | Side by side and fade overlay. Original versus current, or two session images. Download is `comparison.png`, not a project. Original blobs unchanged. |
 | 9 Adjustments | Verified `00e9491` | Brightness, contrast, color, blur, pixelate, grayscale, flip, and rotation. Drawn after the original and before the mask. The file bytes stay put. |
-| 2 Groups, connectors, frames | Verified in this commit | Groups move independent objects together. Connectors follow their ends. Story, Square, and Wide frames keep a fixed size. Image bytes are not rewritten. |
+| 2 Groups, connectors, frames | Verified `a43a09d` | Groups move independent objects together. Connectors follow their ends. Story, Square, and Wide frames keep a fixed size. Image bytes are not rewritten. |
 
 Typecheck, production build, and browser QA are recorded in `DEVELOPMENT_LOG.md`.
