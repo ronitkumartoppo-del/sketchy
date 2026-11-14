@@ -56,3 +56,27 @@ Not shipped: freeform crop, adjustments, Compare interaction, `.sketchy` ZIP.
 - IndexedDB restore across a reload is still not separately proven.
 - Freeform crop and `.sketchy` round-trip are not claimed.
 
+## 2026-11-14 — Freeform crop
+
+Shipped:
+
+- Image Studio lasso, polygon, and rectangle crop. The result is an `ImageMask` in normalized image space (`remove-outside` / `keep`, or `remove-inside`).
+- The original asset’s byte length and dimensions are not written. Drawings stay on the edit project and still paint after the mask.
+- Mindspace shows the masked bitmap. Clearing the crop or undo restores the full picture.
+- Cut-out is the inverse mask. Model tests cover it. The browser pass used keep-inside.
+
+Not shipped: adjustments, Compare, `.sketchy` ZIP.
+
+### Verification
+
+- `npm test` — pass (197 script tests, 76 TypeScript tests, 0 fail).
+- `npx tsc --noEmit` — pass.
+- `npm run build` — pass.
+- Dev smoke — desktop and mobile, canvas present, no console errors, no horizontal overflow.
+- Interactive — uploaded a left-cobalt / right-coral PNG, lassoed the left half. Studio pixels: inside stayed `(35,71,214)`, outside became the checker `(231,223,208)`, not coral. Added a rectangle. Mindspace then counted cobalt pixels and zero coral, plus the ink stroke. Two undos restored cobalt and coral in equal counts. Console had no errors.
+- IndexedDB reload is still not separately proven.
+
+## Resume
+
+Next checkpoint: `.sketchy` ZIP import/export (manifest + original blobs, drawings and masks still editable). Do not flatten the asset. Branch `grok-development`.
+

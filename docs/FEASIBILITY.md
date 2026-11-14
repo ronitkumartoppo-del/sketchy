@@ -9,7 +9,7 @@ The required loop can be built in the browser with no paid API and no account.
 
 Open Mindspace, paste an image, select it, open Image Studio, draw independent objects, freeform-crop, return to the board, export a PNG, save a `.sketchy` file, and reopen it with the source, mask, and drawings still editable.
 
-Image Studio, freeform crop UI, Compare, and the `.sketchy` ZIP writer are **not implemented yet**. This document is the architecture they must follow. A passing model test already proves the non-destructive data rules. It does not prove the pixels.
+Image Studio drawings and freeform crop are implemented. Compare and the `.sketchy` ZIP writer are **not implemented yet**. A flattened PNG is not a project. The crop checkpoint proves the mask in the model and, in the browser, that pixels outside a lasso become transparent while a drawing remains. It does not prove a ZIP round-trip.
 
 ## B. Architecture for each step
 
@@ -110,12 +110,15 @@ Implemented and passing (model only, no pixels):
 - Recolor changes one board object and does not mutate the previous project.
 - Insert image → two drawings → recolor one → polygon mask → duplicate (same asset id, different edit project) → recolor original drawing does not recolor the copy → JSON round-trip → missing-asset detection → delete removes edit projects and keeps the asset record.
 - `parseProject` rejects a non-Sketchy JSON blob.
+- A lasso crop keeps pixels inside the polygon and drops pixels outside. Cut-out inverts that. Setting the mask does not change the asset byte length or the drawings.
+
+Browser, not just the model:
+
+- A lasso crop removed the unselected half of an image on the board, left a drawing in place, and undo restored the original pixels.
 
 Not yet run, and not claimed:
 
-- Browser test that draws two objects, drags them independently, and checks Konva positions.
-- Pixel test that a freeform mask makes outside pixels transparent and leaves drawing objects in the reopened project.
 - ZIP export/import of a real `.sketchy` file.
 - Phone pass: one-finger draw, two-finger pan/zoom, no page scroll.
 
-Those land with Image Studio, the crop checkpoint, and the project-file checkpoint.
+ZIP lands with the project-file checkpoint. A phone device pass is still outstanding.

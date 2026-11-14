@@ -1,20 +1,24 @@
 import { Copy, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Image as KonvaImage, Layer, Rect, Stage, Transformer } from "react-konva";
+import { Image as KonvaImage, Layer, Line, Rect, Shape, Stage, Transformer } from "react-konva";
 import type Konva from "konva";
-import { screenToWorld, zoomAt, zoomBy, type Point } from "../model/geometry";
+import { denormalizePoints, screenToWorld, zoomAt, zoomBy, type Point } from "../model/geometry";
 import { createId } from "../model/ids";
-import { addDrawing, duplicateDrawings, removeDrawings, recolorDrawings, replaceDrawing } from "../model/ops";
+import { polygonMaskFromPixels, rectMaskFromPixels, type CropMode } from "../model/mask";
+import { addDrawing, duplicateDrawings, removeDrawings, recolorDrawings, replaceDrawing, setImageMask } from "../model/ops";
 import { DEFAULT_STROKE_WIDTH, SWATCHES, palette } from "../model/palette";
-import type { Camera, DrawingObject, Tool } from "../model/types";
+import type { Camera, DrawingObject, ImageMask, Tool } from "../model/types";
 import { useSketchy } from "../store/use-sketchy";
 import { IconButton } from "../ui/IconButton";
-import { StudioRail } from "../ui/StudioRail";
+import { StudioRail, type CropTool } from "../ui/StudioRail";
 import { DrawingNode, useHtmlImage } from "./drawings";
+import { MaskedImage } from "./MaskedImage";
 
 type Drag =
   | { mode: "pan"; startScreen: Point; startCamera: Camera }
-  | { mode: "draw"; origin: Point; tool: Tool };
+  | { mode: "draw"; origin: Point; tool: Tool }
+  | { mode: "lasso"; points: number[] }
+  | { mode: "crop-rect"; origin: Point; current: Point };
 
 const cameraRef = { current: { x: 0, y: 0, scale: 1 } as Camera };
 const spaceRef = { current: false };
@@ -22,6 +26,13 @@ const pinchRef = { current: false };
 const dragRef = { current: null as Drag | null };
 const draftRef = { current: null as DrawingObject | null };
 const editIdRef = { current: "" };
+const cropToolRef = { current: null as CropTool | null };
+const cropModeRef = { current: "remove-outside" as CropMode };
+const assetSizeRef = { current: { width: 1, height: 1 } };
+const polyRef = { current: null as number[] | null };
+const chooseCropSink = { current: null as ((tool: CropTool | null) => void) | null };
+const setPolySink = { current: null as ((points: number[] | null) => void) | null };
+const setLassoSink = { current: null as ((points: number[] | null) => void) | null };
 
 const DRAW_TOOLS = new Set<Tool>(["pen", "rect", "ellipse", "arrow", "text"]);
 
@@ -35,6 +46,10 @@ export function StudioCanvas({ editId }: { editId: string }) {
   const [draft, setDraft] = useState<DrawingObject | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [cropTool, setCropTool] = useState<CropTool | null>(null);
+  const [cropMode, setCropMode] = useState<CropMode>("remove-outside");
+  const [lasso, setLasso] = useState<number[] | null>(null);
+  const [poly, setPoly] = useState<number[] | null>(null);
   const cancelEdit = useRef(false);
   const fitted = useRef("");
 
@@ -49,9 +64,38 @@ export function StudioCanvas({ editId }: { editId: string }) {
   const url = useSketchy((state) => (edit ? state.assetUrls[edit.assetId] : undefined));
   const image = useHtmlImage(url);
   const drawings = edit?.drawings ?? [];
+  const mask = edit?.mask ?? null;
   editIdRef.current = editId;
+  cropToolRef.current = cropTool;
+  cropModeRef.current = cropMode;
+  assetSizeRef.current = { width: asset?.width ?? 1, height: asset?.height ?? 1 };
+  polyRef.current = poly;
   bindStudioSelection(selected, setCamera);
   if (camera) cameraRef.current = camera;
+
+  function chooseCrop(next: CropTool | null) {
+    setCropTool(next);
+    cropToolRef.current = next;
+    if (next !== "polygon") {
+      polyRef.current = null;
+      setPoly(null);
+    }
+    setLasso(null);
+  }
+  chooseCropSink.current = chooseCrop;
+  setPolySink.current = setPoly;
+  setLassoSink.current = setLasso;
+
+  function applyCropMode(mode: CropMode) {
+    setCropMode(mode);
+    cropModeRef.current = mode;
+    const current = useSketchy.getState().history.present.imageProjects[editId]?.mask;
+    if (!current) return;
+    const active = current.kind === "rect" ? (current.mode ?? "remove-outside") : current.mode === "keep" ? "remove-outside" : current.mode;
+    if (active === mode) return;
+    const next: ImageMask = current.kind === "rect" ? { ...current, mode } : { ...current, mode };
+    useSketchy.getState().commit((doc) => setImageMask(doc, editId, next));
+  }
 
   useEffect(() => {
     const element = hostRef.current;
@@ -184,11 +228,32 @@ export function StudioCanvas({ editId }: { editId: string }) {
         return;
       }
       if (event.key === "Escape") {
+        if (polyRef.current && polyRef.current.length > 0) {
+          polyRef.current = null;
+          setPolySink.current?.(null);
+          return;
+        }
+        if (cropToolRef.current) {
+          chooseCropSink.current?.(null);
+          return;
+        }
         setSelected([]);
         setEditingId(null);
         return;
       }
+      if (event.key === "Enter" && cropToolRef.current === "polygon") {
+        event.preventDefault();
+        commitOpenPolygon();
+        return;
+      }
       if (mod || event.altKey) return;
+      const keyCrop: Record<string, CropTool> = { l: "lasso", g: "polygon", c: "rect" };
+      const cropNext = keyCrop[key];
+      if (cropNext) {
+        event.preventDefault();
+        chooseCropSink.current?.(cropNext);
+        return;
+      }
       const tools: Partial<Record<string, Tool>> = {
         v: "select",
         h: "pan",
@@ -201,6 +266,7 @@ export function StudioCanvas({ editId }: { editId: string }) {
       const next = tools[key];
       if (next) {
         event.preventDefault();
+        chooseCropSink.current?.(null);
         store.setTool(next);
       }
     };
@@ -234,7 +300,9 @@ export function StudioCanvas({ editId }: { editId: string }) {
 
   const editing = drawings.find((drawing) => drawing.id === editingId);
   const activeTool: Tool = DRAW_TOOLS.has(tool) || tool === "select" || tool === "pan" ? tool : "select";
-  const cursor = space || activeTool === "pan" ? "cursor-grab" : activeTool === "select" ? "cursor-default" : "cursor-crosshair";
+  const cropping = cropTool !== null;
+  const cursor =
+    space || activeTool === "pan" ? "cursor-grab" : cropping || activeTool !== "select" ? "cursor-crosshair" : "cursor-default";
 
   if (!ready) {
     return <p className="grid h-full place-items-center text-sm text-muted">Restoring this browser session…</p>;
@@ -251,7 +319,7 @@ export function StudioCanvas({ editId }: { editId: string }) {
 
   return (
     <div className="flex h-full min-h-0 flex-col-reverse md:flex-row">
-      <StudioRail />
+      <StudioRail crop={cropTool} onCrop={chooseCrop} />
       <div ref={hostRef} className={"relative min-h-0 min-w-0 flex-1 touch-none " + cursor}>
         {size.width > 0 && camera && (
           <Stage
@@ -266,19 +334,62 @@ export function StudioCanvas({ editId }: { editId: string }) {
             onMouseMove={(event) => onStageMove(event, metrics, setDraft)}
             onTouchStart={(event) => onStageDown(event, metrics, setDraft, setSelected, setEditingId)}
             onTouchMove={(event) => onStageMove(event, metrics, setDraft)}
+            onDblClick={() => {
+              if (cropToolRef.current === "polygon") commitOpenPolygon();
+            }}
+            onDblTap={() => {
+              if (cropToolRef.current === "polygon") commitOpenPolygon();
+            }}
           >
             <Layer>
               <Rect name="paper" x={-200000} y={-200000} width={400000} height={400000} fill={palette.paper} />
+              {mask ? <Checker width={asset.width} height={asset.height} /> : null}
               {image ? (
-                <KonvaImage name="photo" image={image} width={asset.width} height={asset.height} />
+                mask ? (
+                  <MaskedImage key={JSON.stringify(mask)} image={image} width={asset.width} height={asset.height} mask={mask} />
+                ) : (
+                  <KonvaImage name="photo" image={image} width={asset.width} height={asset.height} />
+                )
               ) : (
                 <Rect name="photo" width={asset.width} height={asset.height} fill={palette.line} />
               )}
+              <MaskOutline mask={mask} width={asset.width} height={asset.height} scale={camera.scale} />
+              {cropTool === "lasso" && lasso && lasso.length >= 4 ? (
+                <Line
+                  listening={false}
+                  points={lasso}
+                  stroke={palette.coral}
+                  strokeWidth={Math.max(1.25, 2 / camera.scale)}
+                  lineCap="round"
+                  lineJoin="round"
+                />
+              ) : null}
+              {cropTool === "rect" && lasso && lasso.length >= 4 ? (
+                <Rect
+                  listening={false}
+                  x={Math.min(lasso[0] ?? 0, lasso[2] ?? 0)}
+                  y={Math.min(lasso[1] ?? 0, lasso[3] ?? 0)}
+                  width={Math.abs((lasso[2] ?? 0) - (lasso[0] ?? 0))}
+                  height={Math.abs((lasso[3] ?? 0) - (lasso[1] ?? 0))}
+                  stroke={palette.coral}
+                  strokeWidth={Math.max(1.25, 2 / camera.scale)}
+                />
+              ) : null}
+              {cropTool === "polygon" && poly && poly.length >= 4 ? (
+                <Line
+                  listening={false}
+                  points={poly}
+                  stroke={palette.coral}
+                  strokeWidth={Math.max(1.25, 2 / camera.scale)}
+                  lineCap="round"
+                  lineJoin="round"
+                />
+              ) : null}
               {drawings.map((drawing) => (
                 <DrawingNode
                   key={drawing.id}
                   drawing={drawing}
-                  listening={activeTool === "select"}
+                  listening={activeTool === "select" && !cropping}
                   onSelect={(shift) => {
                     setSelected((current) =>
                       shift ? (current.includes(drawing.id) ? current.filter((id) => id !== drawing.id) : [...current, drawing.id]) : [drawing.id],
@@ -310,8 +421,45 @@ export function StudioCanvas({ editId }: { editId: string }) {
         <div className="pointer-events-none absolute left-3 top-3 max-w-[70%] rounded-2xl bg-surface/90 px-3 py-2">
           <p className="truncate text-sm font-medium">{asset.name ?? "Image"}</p>
           <p className="text-xs text-muted">
-            {drawings.length} {drawings.length === 1 ? "drawing" : "drawings"}. Original file unchanged.
+            {drawings.length} {drawings.length === 1 ? "drawing" : "drawings"}.
+            {mask ? " Crop on. Original file unchanged." : " Original file unchanged."}
+            {cropTool === "lasso" ? " Drag a loop." : ""}
+            {cropTool === "polygon" ? " Click corners, then Enter." : ""}
+            {cropTool === "rect" ? " Drag a rectangle." : ""}
           </p>
+          {cropTool || mask ? (
+            <div className="pointer-events-auto mt-2 flex flex-wrap gap-1">
+              <button
+                type="button"
+                className={
+                  "rounded-full px-2 py-1 text-xs " + (cropMode === "remove-outside" ? "bg-ink text-paper" : "bg-paper text-muted")
+                }
+                onClick={() => applyCropMode("remove-outside")}
+              >
+                Keep inside
+              </button>
+              <button
+                type="button"
+                className={
+                  "rounded-full px-2 py-1 text-xs " + (cropMode === "remove-inside" ? "bg-ink text-paper" : "bg-paper text-muted")
+                }
+                onClick={() => applyCropMode("remove-inside")}
+              >
+                Cut out
+              </button>
+              {mask ? (
+                <button
+                  type="button"
+                  className="rounded-full bg-paper px-2 py-1 text-xs text-ink"
+                  onClick={() => {
+                    useSketchy.getState().commit((doc) => setImageMask(doc, editId, null));
+                  }}
+                >
+                  Clear crop
+                </button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
         <button
           type="button"
@@ -418,6 +566,75 @@ export function StudioCanvas({ editId }: { editId: string }) {
   );
 }
 
+function commitOpenPolygon() {
+  const points = polyRef.current;
+  polyRef.current = null;
+  setPolySink.current?.(null);
+  if (!points || points.length < 6) return;
+  const { width, height } = assetSizeRef.current;
+  const mask = polygonMaskFromPixels(points, width, height, cropModeRef.current);
+  if (!mask) return;
+  useSketchy.getState().commit((project) => setImageMask(project, editIdRef.current, mask));
+}
+
+function Checker({ width, height }: { width: number; height: number }) {
+  const cell = Math.max(8, Math.min(width, height) * 0.035);
+  return (
+    <Shape
+      listening={false}
+      sceneFunc={(context) => {
+        context.fillStyle = "#e7dfd0";
+        context.fillRect(0, 0, width, height);
+        context.fillStyle = "#f7f1e6";
+        for (let y = 0; y < height; y += cell) {
+          for (let x = ((y / cell) % 2) * cell; x < width; x += cell * 2) {
+            context.fillRect(x, y, cell, cell);
+          }
+        }
+      }}
+    />
+  );
+}
+
+function MaskOutline({
+  mask,
+  width,
+  height,
+  scale,
+}: {
+  mask: ImageMask | null;
+  width: number;
+  height: number;
+  scale: number;
+}) {
+  if (!mask) return null;
+  const strokeWidth = Math.max(1, 1.5 / scale);
+  if (mask.kind === "rect") {
+    return (
+      <Rect
+        listening={false}
+        x={mask.x * width}
+        y={mask.y * height}
+        width={mask.w * width}
+        height={mask.h * height}
+        stroke={palette.accent}
+        strokeWidth={strokeWidth}
+        dash={[8 / scale, 6 / scale]}
+      />
+    );
+  }
+  return (
+    <Line
+      listening={false}
+      points={denormalizePoints(mask.points, width, height)}
+      closed
+      stroke={palette.accent}
+      strokeWidth={strokeWidth}
+      dash={[8 / scale, 6 / scale]}
+    />
+  );
+}
+
 function publish(camera: Camera) {
   cameraRef.current = camera;
   cameraSink.current?.(camera);
@@ -451,6 +668,25 @@ function onStageDown(
   const middle = "button" in event.evt && event.evt.button === 1;
   if (tool === "pan" || spaceRef.current || middle) {
     dragRef.current = { mode: "pan", startScreen: pointer, startCamera: cameraRef.current };
+    return;
+  }
+  const crop = cropToolRef.current;
+  if (crop) {
+    const world = screenToWorld(cameraRef.current, pointer);
+    if (crop === "lasso") {
+      const points = [world.x, world.y];
+      dragRef.current = { mode: "lasso", points };
+      setLassoSink.current?.(points);
+      return;
+    }
+    if (crop === "rect") {
+      dragRef.current = { mode: "crop-rect", origin: world, current: world };
+      setLassoSink.current?.([world.x, world.y, world.x, world.y]);
+      return;
+    }
+    const next = [...(polyRef.current ?? []), world.x, world.y];
+    polyRef.current = next;
+    setPolySink.current?.(next);
     return;
   }
   if (tool === "select") {
@@ -487,6 +723,19 @@ function onStageMove(
     return;
   }
   const world = screenToWorld(cameraRef.current, pointer);
+  if (drag.mode === "lasso") {
+    const lastX = drag.points[drag.points.length - 2] ?? 0;
+    const lastY = drag.points[drag.points.length - 1] ?? 0;
+    if (Math.hypot(world.x - lastX, world.y - lastY) < 1.5) return;
+    drag.points = [...drag.points, world.x, world.y];
+    setLassoSink.current?.(drag.points);
+    return;
+  }
+  if (drag.mode === "crop-rect") {
+    drag.current = world;
+    setLassoSink.current?.([drag.origin.x, drag.origin.y, world.x, world.y]);
+    return;
+  }
   const { stroke, fill } = useSketchy.getState();
   if (drag.tool === "pen") {
     const current = draftRef.current;
@@ -509,7 +758,20 @@ function finishDraw(
 ) {
   const drag = dragRef.current;
   dragRef.current = null;
-  if (!drag || drag.mode !== "draw") return;
+  if (!drag) return;
+  if (drag.mode === "lasso" || drag.mode === "crop-rect") {
+    setLassoSink.current?.(null);
+    const { width, height } = assetSizeRef.current;
+    const mode = cropModeRef.current;
+    const mask =
+      drag.mode === "lasso"
+        ? polygonMaskFromPixels(drag.points, width, height, mode)
+        : rectMaskFromPixels(drag.origin.x, drag.origin.y, drag.current.x, drag.current.y, width, height, mode);
+    if (!mask) return;
+    useSketchy.getState().commit((project) => setImageMask(project, editIdRef.current, mask));
+    return;
+  }
+  if (drag.mode !== "draw") return;
   const draft = draftRef.current;
   draftRef.current = null;
   setDraftState(null);

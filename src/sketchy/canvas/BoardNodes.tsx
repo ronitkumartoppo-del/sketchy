@@ -4,9 +4,10 @@ import { Arrow, Ellipse, Group, Image as KonvaImage, Line, Rect, Text } from "re
 import type Konva from "konva";
 import { bakeBoardTransform } from "../model/geometry";
 import { palette } from "../model/palette";
-import type { BoardObject, DrawingObject } from "../model/types";
+import type { BoardObject, DrawingObject, ImageMask } from "../model/types";
 import { useSketchy } from "../store/use-sketchy";
 import { DrawingShape } from "./drawings";
+import { MaskedImage } from "./MaskedImage";
 
 function useHtmlImage(url: string | undefined): HTMLImageElement | null {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
@@ -34,6 +35,9 @@ export function BoardNode({ object, listening }: { object: BoardObject; listenin
   );
   const source = useSketchy((state) =>
     object.type === "image" ? state.history.present.assets[object.assetId] : undefined,
+  );
+  const mask = useSketchy((state) =>
+    object.type === "image" ? (state.history.present.imageProjects[object.imageProjectId]?.mask ?? null) : null,
   );
   const draggable = listening && !object.locked && object.id !== "draft";
 
@@ -97,7 +101,14 @@ export function BoardNode({ object, listening }: { object: BoardObject; listenin
       onDragEnd={onDragEnd}
       onTransformEnd={onTransformEnd}
     >
-      <NodeShape object={object} image={image} drawings={drawings} sourceWidth={source?.width} sourceHeight={source?.height} />
+      <NodeShape
+        object={object}
+        image={image}
+        drawings={drawings}
+        mask={mask}
+        sourceWidth={source?.width}
+        sourceHeight={source?.height}
+      />
     </Group>
   );
 
@@ -112,12 +123,14 @@ function NodeShape({
   object,
   image,
   drawings,
+  mask,
   sourceWidth,
   sourceHeight,
 }: {
   object: BoardObject;
   image: HTMLImageElement | null;
   drawings?: DrawingObject[];
+  mask: ImageMask | null;
   sourceWidth?: number;
   sourceHeight?: number;
 }) {
@@ -201,7 +214,11 @@ function NodeShape({
     case "image":
       return image ? (
         <>
-          <KonvaImage image={image} width={object.width} height={object.height} />
+          {mask ? (
+            <MaskedImage key={JSON.stringify(mask)} image={image} width={object.width} height={object.height} mask={mask} />
+          ) : (
+            <KonvaImage image={image} width={object.width} height={object.height} />
+          )}
           {drawings && drawings.length > 0 && sourceWidth && sourceHeight ? (
             <Group
               listening={false}

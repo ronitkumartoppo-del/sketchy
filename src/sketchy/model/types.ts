@@ -35,7 +35,7 @@ export interface Adjustments {
 
 /** Normalized to the source image (0..1), so a mask survives resize. */
 export type ImageMask =
-  | { kind: "rect"; x: number; y: number; w: number; h: number }
+  | { kind: "rect"; x: number; y: number; w: number; h: number; mode?: "keep" | "remove-outside" | "remove-inside" }
   | {
       kind: "polygon";
       /** x,y pairs, normalized 0..1 in source-image space. */

@@ -1,4 +1,4 @@
-import { ArrowUpRight, Circle, Hand, MousePointer2, Pencil, Square, Type } from "lucide-react";
+import { ArrowUpRight, Circle, Crop, Hand, Lasso, MousePointer2, Pentagon, Pencil, Square, Type } from "lucide-react";
 import type { Tool } from "../model/types";
 import { useSketchy } from "../store/use-sketchy";
 import { IconButton } from "./IconButton";
@@ -13,7 +13,15 @@ const TOOLS: { id: Tool; label: string; icon: typeof MousePointer2 }[] = [
   { id: "text", label: "Text (T)", icon: Type },
 ];
 
-export function StudioRail() {
+export type CropTool = "lasso" | "polygon" | "rect";
+
+const CROPS: { id: CropTool; label: string; icon: typeof Lasso }[] = [
+  { id: "lasso", label: "Lasso crop (L)", icon: Lasso },
+  { id: "polygon", label: "Polygon crop (G)", icon: Pentagon },
+  { id: "rect", label: "Rectangle crop (C)", icon: Crop },
+];
+
+export function StudioRail({ crop, onCrop }: { crop: CropTool | null; onCrop: (tool: CropTool | null) => void }) {
   const tool = useSketchy((state) => state.tool);
   const setTool = useSketchy((state) => state.setTool);
   const side = typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches ? "top" : "right";
@@ -27,8 +35,26 @@ export function StudioRail() {
             key={item.id}
             label={item.label}
             side={side}
-            active={tool === item.id}
-            onClick={() => setTool(item.id)}
+            active={!crop && tool === item.id}
+            onClick={() => {
+              onCrop(null);
+              setTool(item.id);
+            }}
+          >
+            <Icon className="size-5" />
+          </IconButton>
+        );
+      })}
+      <span className="mx-1 hidden h-6 w-px bg-line md:mx-0 md:my-1 md:h-px md:w-6" />
+      {CROPS.map((item) => {
+        const Icon = item.icon;
+        return (
+          <IconButton
+            key={item.id}
+            label={item.label}
+            side={side}
+            active={crop === item.id}
+            onClick={() => onCrop(crop === item.id ? null : item.id)}
           >
             <Icon className="size-5" />
           </IconButton>
