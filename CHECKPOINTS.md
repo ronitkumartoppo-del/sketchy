@@ -22,6 +22,7 @@ Branch: `grok-development`
 | 8.2 Frame connectors | Verified `eace451` | A frame PNG includes connectors that touch that frame. A connector between objects outside it is left out. The picture is still not a project. |
 | 3.1 Curves | Verified `26378d2` | Curve (B) on the board and in Image Studio stores a cubic Bézier. The picture is not flattened into the file. |
 | 9.1 Board bitmap | Verified `71d40d8` | Photos larger than 560px on the long side are decoded smaller for the board. The stored file, Image Studio, and Save PNG stay full size. |
-| 9.2 Pinch | Verified in this commit | Two fingers zoom around their midpoint and cancel a one-finger stroke. One finger does not pinch. A physical phone is still not claimed. |
+| 9.2 Pinch | Verified `7a402d4` | Two fingers zoom around their midpoint and cancel a one-finger stroke. One finger does not pinch. A physical phone is still not claimed. |
+| 10 Integration | Verified in this commit | One model walk covers a large photo, a curve, a crop, duplicate, undo, a frame connector, and a pinch. Browser: a curve landed on the board, and an 800×400 file stayed 800×400 while the board showed 560×280. |
 
 Typecheck, production build, and browser QA are recorded in `DEVELOPMENT_LOG.md`.

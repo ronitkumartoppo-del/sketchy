@@ -286,6 +286,22 @@ Shipped:
 - `npm test` — pass (197 script tests, 96 TypeScript tests, 0 fail).
 - `npx tsc --noEmit` — pass.
 
+## 2026-11-14 — Integration
+
+Shipped: no new tool. The curve, the board bitmap, the pinch, the crop, and undo were run as one workflow.
+
+### Verification
+
+- Model — a 2000×1000 asset is placed at 560×280 and keeps `byteLength` 9000. A Bézier drawing and a crop survive duplicate and a JSON round trip. Deleting both uses drops the asset; undo brings `byteLength` 9000 back. A connector that leaves a frame is included. A pinch from 40px to 80px doubles the scale and keeps the midpoint.
+- Browser — Curve (B) placed one curve object on the board. An 800×400 PNG (7935 bytes) was stored as 800×400 with that blob size. The picture on the board was 560×280. Console had no errors. Synthetic pointer events in this browser did not carry distinct pointer ids, so the live pinch was not re-fired on the page. The page calls the function the model test covers.
+- `npm test` — pass (197 script tests, 97 TypeScript tests, 0 fail).
+- `npx tsc --noEmit` — pass.
+- `npm run build` — pass.
+- Dev smoke — desktop and mobile, canvas present, no console errors, no horizontal overflow.
+- Production build shows the board after the canvas chunk loads.
+- A physical phone is still not claimed.
+
+
 
 
 
