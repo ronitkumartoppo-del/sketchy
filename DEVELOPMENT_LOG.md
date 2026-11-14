@@ -189,6 +189,33 @@ Not shipped: a pass on a physical phone.
 - Dev smoke — desktop and mobile, canvas present, no console errors, no horizontal overflow.
 - Production build shows the empty board after the canvas chunk loads.
 
+## Resume
+
+Next checkpoint: a physical phone pass, if one is still required. Do not flatten the asset. Do not treat a PNG or a comparison picture as a project. Branch `grok-development`.
+
+## 2026-11-14 — Deleted images leave the project file
+
+Shipped:
+
+- Deleting the last board image that uses a file removes that asset and its edit project from the current document. A downloaded `.sketchy` file is that document, so the deleted image is not in it.
+- Undo and redo snapshots still name the asset. The original bytes stay in this browser until no snapshot names them.
+- A reload does not restore the undo stack. Bytes that the saved session no longer names are deleted then.
+- A second image that shares the file keeps the asset and the bytes.
+
+Not shipped: a pass on a physical phone.
+
+### Verification
+
+- Model — deleting the only image clears the asset. While that older snapshot is still in history, the blob id is not unreachable. After the history cap drops that snapshot, it is. Deleting one of two images that share a file leaves `byteLength` 171.
+- Browser — uploaded an 80×40 PNG. Delete left the board empty and the saved session with no assets, and the blob was still stored. Undo put the image back; a pixel read `(35,71,214)`. Delete again, reload, and the blob list was empty. Console had no errors.
+- `npm test` — pass (197 script tests, 92 TypeScript tests, 0 fail).
+- `npx tsc --noEmit` — pass.
+- `npm run build` — pass.
+- Dev smoke — desktop and mobile, canvas present, no console errors, no horizontal overflow.
+- Production build shows the empty board after the canvas chunk loads.
+
+
+
 
 
 

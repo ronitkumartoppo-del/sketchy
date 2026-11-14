@@ -16,7 +16,7 @@
     "preview:stop": "node scripts/preview.mjs stop",
     "typecheck": "tsc --noEmit",
     "check:auth": "node scripts/check-auth-invariant.mjs",
-    "test": "node --test 'scripts/**/*.test.mjs' && node --experimental-strip-types --test src/lib/app-data/app-data.test.ts src/lib/app-data/readiness-schedule.test.ts src/lib/auth/gate-identity.test.ts src/lib/auth/sign-in-gate.test.ts src/lib/preview-path-prefix.test.ts src/sketchy/model/geometry.test.ts src/sketchy/model/history.test.ts src/sketchy/model/workflow.test.ts src/sketchy/model/studio.test.ts src/sketchy/model/mask.test.ts src/sketchy/model/compare.test.ts src/sketchy/model/adjust.test.ts src/sketchy/model/board.test.ts src/sketchy/model/export.test.ts src/sketchy/storage/sketchy-file.test.ts",
+    "test": "node --test 'scripts/**/*.test.mjs' && node --experimental-strip-types --test src/lib/app-data/app-data.test.ts src/lib/app-data/readiness-schedule.test.ts src/lib/auth/gate-identity.test.ts src/lib/auth/sign-in-gate.test.ts src/lib/preview-path-prefix.test.ts src/sketchy/model/geometry.test.ts src/sketchy/model/history.test.ts src/sketchy/model/workflow.test.ts src/sketchy/model/studio.test.ts src/sketchy/model/mask.test.ts src/sketchy/model/compare.test.ts src/sketchy/model/adjust.test.ts src/sketchy/model/board.test.ts src/sketchy/model/export.test.ts src/sketchy/model/assets.test.ts src/sketchy/storage/sketchy-file.test.ts",
     "lint": "eslint .",
     "format": "prettier --write ."
   },

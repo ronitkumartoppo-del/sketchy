@@ -18,5 +18,6 @@ Branch: `grok-development`
 | 9 Adjustments | Verified `00e9491` | Brightness, contrast, color, blur, pixelate, grayscale, flip, and rotation. Drawn after the original and before the mask. The file bytes stay put. |
 | 2 Groups, connectors, frames | Verified `a43a09d` | Groups move independent objects together. Connectors follow their ends. Story, Square, and Wide frames keep a fixed size. Image bytes are not rewritten. |
 | 8.1 Picture export | Verified `883d3b6` | An image PNG uses the original pixel size. A frame PNG is the artboard at 2×. Neither file is a project. Original bytes stay put. |
+| 1.4 Delete and bytes | Verified in this commit | Deleting the last use removes the asset from the project. Undo in the same visit restores it. A reload drops bytes undo can no longer reach. |
 
 Typecheck, production build, and browser QA are recorded in `DEVELOPMENT_LOG.md`.

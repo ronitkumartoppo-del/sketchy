@@ -1,12 +1,14 @@
 import { toast } from "sonner";
+import { unreachableBlobIds } from "../model/assets";
 import { collectAssetIds, parseProject } from "../model/document";
 import type { SketchyProject } from "../model/types";
 import { useSketchy } from "../store/use-sketchy";
-import { idbGet, idbGetBlob, idbSet } from "./idb";
+import { idbDeleteBlobs, idbGet, idbGetBlob, idbListBlobIds, idbSet } from "./idb";
 
 const SESSION_KEY = "session";
 let started = false;
 let timer = 0;
+let sweepTimer = 0;
 
 export function bootstrapSession(): void {
   if (started || typeof indexedDB === "undefined") {
@@ -44,10 +46,37 @@ export function schedulePersist(project: SketchyProject): void {
   timer = window.setTimeout(() => {
     void idbSet(SESSION_KEY, project).catch((error) => console.error(error));
   }, 300);
+  scheduleBlobSweep();
 }
 
 export function flushPersist(project: SketchyProject): void {
   if (typeof indexedDB === "undefined") return;
   window.clearTimeout(timer);
   void idbSet(SESSION_KEY, project).catch((error) => console.error(error));
+  scheduleBlobSweep();
+}
+
+function scheduleBlobSweep(): void {
+  window.clearTimeout(sweepTimer);
+  sweepTimer = window.setTimeout(() => {
+    void sweepBlobs();
+  }, 400);
+}
+
+async function sweepBlobs(): Promise<void> {
+  const history = useSketchy.getState().history;
+  const stored = await idbListBlobIds();
+  const drop = unreachableBlobIds(stored, [history.present, ...history.past, ...history.future]);
+  if (drop.length === 0) return;
+  await idbDeleteBlobs(drop);
+  const urls = { ...useSketchy.getState().assetUrls };
+  let changed = false;
+  for (const id of drop) {
+    const url = urls[id];
+    if (!url) continue;
+    URL.revokeObjectURL(url);
+    delete urls[id];
+    changed = true;
+  }
+  if (changed) useSketchy.setState({ assetUrls: urls });
 }

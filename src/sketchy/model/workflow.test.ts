@@ -143,7 +143,7 @@ describe("image edit projects are non-destructive", () => {
 
     const removed = removeObjects(restored, [image.id, duplicated.id]);
     assert.equal(removed.boards[0]!.objects.length, 0);
-    assert.equal(removed.assets.asset_shot?.id, "asset_shot");
+    assert.equal(removed.assets.asset_shot, undefined);
     assert.deepEqual(removed.imageProjects, {});
   });
 });

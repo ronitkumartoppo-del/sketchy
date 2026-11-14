@@ -159,7 +159,24 @@ function dropUnusedImageProjects(project: SketchyProject): SketchyProject {
   for (const [id, edit] of Object.entries(project.imageProjects)) {
     if (used.has(id)) imageProjects[id] = edit;
   }
-  return { ...project, imageProjects };
+  return dropUnusedAssets({ ...project, imageProjects });
+}
+
+function dropUnusedAssets(project: SketchyProject): SketchyProject {
+  const used = new Set<string>();
+  for (const edit of Object.values(project.imageProjects)) used.add(edit.assetId);
+  for (const board of project.boards) {
+    for (const object of board.objects) {
+      if (object.type === "image") used.add(object.assetId);
+    }
+  }
+  let changed = false;
+  const assets: SketchyProject["assets"] = {};
+  for (const [id, asset] of Object.entries(project.assets)) {
+    if (used.has(id)) assets[id] = asset;
+    else changed = true;
+  }
+  return changed ? { ...project, assets } : project;
 }
 
 export function duplicateObjects(
