@@ -76,6 +76,31 @@ Not shipped: adjustments, Compare, `.sketchy` ZIP.
 - Interactive — uploaded a left-cobalt / right-coral PNG, lassoed the left half. Studio pixels: inside stayed `(35,71,214)`, outside became the checker `(231,223,208)`, not coral. Added a rectangle. Mindspace then counted cobalt pixels and zero coral, plus the ink stroke. Two undos restored cobalt and coral in equal counts. Console had no errors.
 - IndexedDB reload is still not separately proven.
 
+## 2026-11-14 — .sketchy file
+
+Shipped:
+
+- Projects can download and open a `.sketchy` ZIP: `manifest.json`, `assets/{id}`, `settings/export.json`.
+- The archive stores the project JSON and the original blobs. Masks and drawings stay in the manifest.
+- Opening a file replaces the session in this browser after a confirm when the board is not empty. A missing image is reported and does not drop the marks. A file without `manifest.json`, or a manifest that is not a Sketchy project, is rejected.
+- A PNG is not accepted as a project.
+
+Not shipped: adjustments, Compare, groups, connectors, frames.
+
+### Verification
+
+- Model round-trip — mask, drawing text, and original bytes survive pack/unpack. A ZIP without the blob reports the missing id. A ZIP without a manifest and a non-Sketchy manifest are rejected.
+- Browser — downloaded the live session (1 rect, polygon mask, 1659-byte PNG). Deleted IndexedDB. Opened the file into an empty session. Mindspace pixels: cobalt present, coral 0, ink stroke present. Reloaded the page and the same pixels were still there.
+- `npm test` — pass (197 script tests, 78 TypeScript tests, 0 fail).
+- `npx tsc --noEmit` — pass.
+- `npm run build` — pass.
+- Dev smoke — desktop and mobile, canvas present, no console errors, no horizontal overflow.
+- Production build shows the empty board after the canvas chunk loads.
+
+## Resume
+
+Next checkpoint: Compare, or adjustments on the image edit project. Do not flatten the asset. Do not treat a PNG as a project. Branch `grok-development`.
+
 ## Resume
 
 Next checkpoint: `.sketchy` ZIP import/export (manifest + original blobs, drawings and masks still editable). Do not flatten the asset. Branch `grok-development`.

@@ -9,7 +9,7 @@ The required loop can be built in the browser with no paid API and no account.
 
 Open Mindspace, paste an image, select it, open Image Studio, draw independent objects, freeform-crop, return to the board, export a PNG, save a `.sketchy` file, and reopen it with the source, mask, and drawings still editable.
 
-Image Studio drawings and freeform crop are implemented. Compare and the `.sketchy` ZIP writer are **not implemented yet**. A flattened PNG is not a project. The crop checkpoint proves the mask in the model and, in the browser, that pixels outside a lasso become transparent while a drawing remains. It does not prove a ZIP round-trip.
+Image Studio drawings, freeform crop, and `.sketchy` import/export are implemented. Compare is **not implemented yet**. A flattened PNG is not a project. The file round-trip keeps the mask, the drawings, and the original bytes.
 
 ## B. Architecture for each step
 
@@ -115,10 +115,10 @@ Implemented and passing (model only, no pixels):
 Browser, not just the model:
 
 - A lasso crop removed the unselected half of an image on the board, left a drawing in place, and undo restored the original pixels.
+- Download `.sketchy`, wipe the browser store, open the file, and reload. The crop and the drawing were still there. A PNG is rejected as a project by the parser.
 
 Not yet run, and not claimed:
 
-- ZIP export/import of a real `.sketchy` file.
 - Phone pass: one-finger draw, two-finger pan/zoom, no page scroll.
 
-ZIP lands with the project-file checkpoint. A phone device pass is still outstanding.
+A phone device pass is still outstanding.
