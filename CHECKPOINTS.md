@@ -19,6 +19,6 @@ Branch: `grok-development`
 | 2 Groups, connectors, frames | Verified `a43a09d` | Groups move independent objects together. Connectors follow their ends. Story, Square, and Wide frames keep a fixed size. Image bytes are not rewritten. |
 | 8.1 Picture export | Verified `883d3b6` | An image PNG uses the original pixel size. A frame PNG is the artboard at 2×. Neither file is a project. Original bytes stay put. |
 | 1.4 Delete and bytes | Verified `bb45e80` | Deleting the last use removes the asset from the project. Undo in the same visit restores it. A reload drops bytes undo can no longer reach. |
-| 8.2 Frame connectors | Verified in this commit | A frame PNG includes connectors that touch that frame. A connector between objects outside it is left out. The picture is still not a project. |
+| 8.2 Frame connectors | Verified `eace451` | A frame PNG includes connectors that touch that frame. A connector between objects outside it is left out. The picture is still not a project. |
 
 Typecheck, production build, and browser QA are recorded in `DEVELOPMENT_LOG.md`.
