@@ -13,6 +13,7 @@ Sketchy is a browser workspace for arranging images, marking them up, and compar
 - **Compare.** Line up two images from this session, or the original file against the current crop and marks. Side by side, or a fade overlay. Download comparison PNG is a picture, not the editable project. Originals are not rewritten.
 - **This browser.** The session is written to IndexedDB and restored on the next visit.
 - **View PNG.** Downloads a picture of the current viewport. The button says so. It is not the editable project.
+- **Save PNG.** With one image selected, or from Image Studio, downloads that image at its original pixel size: the file, then the adjustments, then the crop, then the drawings. With a frame selected, downloads that frame and the objects inside it. Connectors are not in the frame picture. Neither file is the editable project, and neither replaces the original image.
 
 ## Not built yet
 

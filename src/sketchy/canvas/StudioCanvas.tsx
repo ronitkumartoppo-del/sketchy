@@ -14,6 +14,7 @@ import { IconButton } from "../ui/IconButton";
 import { AdjustBar } from "../ui/AdjustBar";
 import { StudioRail, type CropTool } from "../ui/StudioRail";
 import { DrawingNode, useHtmlImage } from "./drawings";
+import { downloadEditedPicture } from "./export-picture";
 import { MaskedImage } from "./MaskedImage";
 
 type Drag =
@@ -437,6 +438,13 @@ export function StudioCanvas({ editId }: { editId: string }) {
             {cropTool === "polygon" ? " Click corners, then Enter." : ""}
             {cropTool === "rect" ? " Drag a rectangle." : ""}
           </p>
+          <button
+            type="button"
+            className="pointer-events-auto mt-2 rounded-full bg-ink px-3 py-2 text-xs font-medium text-paper"
+            onClick={() => void downloadEditedPicture(editId)}
+          >
+            Save PNG
+          </button>
           {cropTool || mask ? (
             <div className="pointer-events-auto mt-2 flex flex-wrap gap-1">
               <button

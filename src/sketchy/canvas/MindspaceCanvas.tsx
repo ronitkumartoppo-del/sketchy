@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { activeBoard } from "../model/document";
 import { screenToWorld, rootObjects, worldOrigin, zoomAt, zoomBy, type Point } from "../model/geometry";
 import { FRAME_PRESETS } from "../model/frames";
+import { PICTURE_FILES } from "../model/export";
 import { createId } from "../model/ids";
 import { addObject } from "../model/ops";
 import { DEFAULT_STROKE_WIDTH, palette } from "../model/palette";
@@ -673,7 +674,7 @@ function downloadView(stage: Konva.Stage | null) {
   stage.batchDraw();
   const link = document.createElement("a");
   link.href = url;
-  link.download = "sketchy-view.png";
+  link.download = PICTURE_FILES.view;
   link.click();
   toast.success("Downloaded a PNG of this view. It is not the editable project.");
 }

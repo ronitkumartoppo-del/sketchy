@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowDown, ArrowUp, Copy, Lock, LockOpen, Trash2 } from "lucide-react";
 import { SWATCHES } from "../model/palette";
 import { groupMembers } from "../model/ops";
+import { downloadEditedPicture, downloadFramePicture } from "../canvas/export-picture";
 import { useSketchy } from "../store/use-sketchy";
 import { IconButton } from "./IconButton";
 
@@ -28,13 +29,25 @@ export function SelectionBar() {
     <div className="absolute inset-x-3 bottom-3 z-20 flex flex-wrap items-center justify-center gap-2">
       <div className="flex max-w-full flex-wrap items-center gap-1 rounded-2xl border border-line bg-surface px-2 py-1 shadow-sm">
         {objects.length === 1 && objects[0]?.type === "image" ? (
-          <Link
-            to="/studio"
-            search={{ edit: objects[0].imageProjectId }}
-            className="rounded-full bg-accent px-3 py-2 text-xs font-medium text-paper"
-          >
-            Edit image
-          </Link>
+          <>
+            <Link
+              to="/studio"
+              search={{ edit: objects[0].imageProjectId }}
+              className="rounded-full bg-accent px-3 py-2 text-xs font-medium text-paper"
+            >
+              Edit image
+            </Link>
+            <button
+              type="button"
+              className="rounded-full px-3 py-2 text-xs font-medium text-ink"
+              onClick={() => {
+                const image = objects[0];
+                if (image?.type === "image") void downloadEditedPicture(image.imageProjectId);
+              }}
+            >
+              Save PNG
+            </button>
+          </>
         ) : imagesOnly ? (
           <p className="px-2 text-xs text-muted">Select one image. The original file stays untouched.</p>
         ) : (
@@ -75,6 +88,18 @@ export function SelectionBar() {
             ))}
           </>
         )}
+        {objects.length === 1 && objects[0]?.type === "frame" ? (
+          <button
+            type="button"
+            className="rounded-full px-3 py-2 text-xs font-medium text-ink"
+            onClick={() => {
+              const frame = objects[0];
+              if (frame?.type === "frame") void downloadFramePicture(frame.id);
+            }}
+          >
+            Save PNG
+          </button>
+        ) : null}
         {canGroup ? (
           <button
             type="button"

@@ -164,4 +164,31 @@ Not shipped: a pass on a physical phone.
 - Dev smoke — desktop and mobile, canvas present, no console errors, no horizontal overflow.
 - Production build shows the empty board after the canvas chunk loads, including the frame, connect, and group hint.
 
+## Resume
+
+Next checkpoint: a physical phone pass, if one is still required. Do not flatten the asset. Do not treat a PNG or a comparison picture as a project. Branch `grok-development`.
+
+## 2026-11-14 — Picture export
+
+Shipped:
+
+- Save PNG on one selected image, and in Image Studio, writes `sketchy-image.png` at the original pixel size. Paint order is the file, then adjustments, then the mask, then the drawings.
+- Save PNG on one selected frame writes `sketchy-frame.png` at twice the artboard size. It includes the objects inside the frame. Connectors are not in that picture.
+- View PNG is still only the current viewport, named `sketchy-view.png`.
+- None of these pictures is a `.sketchy` file. The original blob is not rewritten.
+
+Not shipped: a pass on a physical phone.
+
+### Verification
+
+- Model — an 80×40 asset stays 80×40 even when the board object is larger. A 270×480 frame exports at 540×960. The names are PNG, not `.sketchy`.
+- Browser — uploaded an 80×40 PNG (171 bytes). Drew a rectangle in Image Studio. The download was an 80×40 PNG: 1555 cobalt pixels, 1494 coral pixels, 83 ink pixels from the stroke. The stored blob stayed 171 bytes. A Story frame downloaded as 540×960, filled with the paper color `#fffdf8`, and did not include the image sitting outside the frame. Console had no errors.
+- `npm test` — pass (197 script tests, 90 TypeScript tests, 0 fail).
+- `npx tsc --noEmit` — pass.
+- `npm run build` — pass.
+- Dev smoke — desktop and mobile, canvas present, no console errors, no horizontal overflow.
+- Production build shows the empty board after the canvas chunk loads.
+
+
+
 
