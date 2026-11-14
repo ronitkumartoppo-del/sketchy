@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState, type ComponentType } from "react";
 
 export const Route = createFileRoute("/compare")({
   head: () => ({ meta: [{ title: "Compare — Sketchy" }] }),
@@ -6,12 +7,18 @@ export const Route = createFileRoute("/compare")({
 });
 
 function ComparePage() {
-  return (
-    <div className="mx-auto flex h-full max-w-md flex-col items-center justify-center gap-3 px-6 text-center">
-      <h1 className="font-display text-3xl italic">Compare</h1>
-      <p className="text-sm leading-relaxed text-muted">
-        Side-by-side comparison is not built yet. It will line up two images, fade an overlay, and export the comparison without accounts or a cloud upload.
-      </p>
-    </div>
-  );
+  const [View, setView] = useState<ComponentType | null>(null);
+  useEffect(() => {
+    let live = true;
+    void import("@/sketchy/canvas/CompareView").then((mod) => {
+      if (live) setView(() => mod.CompareView);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+  if (!View) {
+    return <p className="grid h-full place-items-center text-sm text-muted">Opening Compare…</p>;
+  }
+  return <View />;
 }

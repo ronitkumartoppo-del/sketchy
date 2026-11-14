@@ -13,6 +13,7 @@ Branch: `grok-development`
 | 1.3 Boards, lock, order, text | Verified `749f2a8` | Groups, connectors, and design frames are not in this checkpoint. |
 | 3 Image Studio drawings | Verified `be39876` | Independent drawings in source pixels. Recolor, transform, delete, undo. Mindspace overlays them. Original blob is not replaced. |
 | 4 Freeform crop | Verified `f6a24d8` | Lasso, polygon, and rectangle write `mask` only. Keep-inside and cut-out. Drawings stay. Browser check: lasso removed the unselected half and undo restored it. |
-| 7 `.sketchy` file | Verified `fc39ac0` | ZIP with `manifest.json` and original blobs. Open replaces the browser session. Round-trip kept the mask, the drawing, and the pixels after a reload. Adjustments and Compare are not in this checkpoint. |
+| 7 `.sketchy` file | Verified `fc39ac0` | ZIP with `manifest.json` and original blobs. Open replaces the browser session. Round-trip kept the mask, the drawing, and the pixels after a reload. Adjustments are not in this checkpoint. |
+| 8 Compare | Shipped | Side by side and fade overlay. Original versus current, or two session images. Download is `comparison.png`, not a project. Original blobs unchanged. Hash recorded after push. |
 
 Typecheck, production build, and browser QA are recorded in `DEVELOPMENT_LOG.md`.

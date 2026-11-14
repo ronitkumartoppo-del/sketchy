@@ -97,11 +97,28 @@ Not shipped: adjustments, Compare, groups, connectors, frames.
 - Dev smoke — desktop and mobile, canvas present, no console errors, no horizontal overflow.
 - Production build shows the empty board after the canvas chunk loads.
 
+## 2026-11-14 — Compare
+
+Shipped:
+
+- Compare lines up two images already in the session, or the original file against the current crop and marks on one image.
+- Side by side, and an overlay with a fade. Original skips the mask and the drawings. Current paints the mask, then the drawings. The source bitmap is not written.
+- Download comparison PNG is a picture named `comparison.png`. It is not a `.sketchy` file.
+- If an image has non-default adjustments, Compare says they are not drawn yet.
+
+Not shipped: adjustments, groups, connectors, frames. A phone device pass is still not claimed.
+
+### Verification
+
+- Model — listing images does not change the project JSON or asset byte length. One image defaults to original versus current. Two images default to both current. Overlay math goes from A to B. The download name is a PNG.
+- Browser — cobalt image, one rectangle in Image Studio. Compare left was solid cobalt `(35,71,214)`. Compare right’s darkest pixel was the ink stroke `(26,22,12)`. Overlay at 0% was only cobalt. Overlay at 100% showed the stroke. After adding coral, the left stayed cobalt plus ink and the right was solid coral `(226,61,43)`. Both blobs stayed 551 bytes. The download began with PNG magic bytes.
+- `npm test` — pass (197 script tests, 83 TypeScript tests, 0 fail).
+- `npx tsc --noEmit` — pass.
+- `npm run build` — pass.
+- Dev smoke — desktop and mobile, canvas present, no console errors, no horizontal overflow.
+- Production build shows the empty board after the canvas chunk loads. The first automated snapshot caught “Opening Mindspace…”. A follow-up check showed one canvas, the empty board, and a clean console. Compare on that build showed the empty-state copy.
+
 ## Resume
 
-Next checkpoint: Compare, or adjustments on the image edit project. Do not flatten the asset. Do not treat a PNG as a project. Branch `grok-development`.
-
-## Resume
-
-Next checkpoint: `.sketchy` ZIP import/export (manifest + original blobs, drawings and masks still editable). Do not flatten the asset. Branch `grok-development`.
+Next checkpoint: adjustments on the image edit project. Do not flatten the asset. Do not treat a PNG or a comparison picture as a project. Branch `grok-development`.
 
