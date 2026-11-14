@@ -3,6 +3,7 @@ import { unreachableBlobIds } from "../model/assets";
 import { collectAssetIds, parseProject } from "../model/document";
 import type { SketchyProject } from "../model/types";
 import { useSketchy } from "../store/use-sketchy";
+import { fillDisplayUrls } from "../canvas/display-bitmap";
 import { idbDeleteBlobs, idbGet, idbGetBlob, idbListBlobIds, idbSet } from "./idb";
 
 const SESSION_KEY = "session";
@@ -33,6 +34,7 @@ async function restore(): Promise<void> {
       if (blob) urls[id] = URL.createObjectURL(blob);
     }
     useSketchy.getState().hydrate(project, urls);
+    void fillDisplayUrls(project);
   } catch (error) {
     console.error(error);
     toast.error("Couldn't read the saved session. Sketchy started a new board.");
@@ -70,13 +72,21 @@ async function sweepBlobs(): Promise<void> {
   if (drop.length === 0) return;
   await idbDeleteBlobs(drop);
   const urls = { ...useSketchy.getState().assetUrls };
+  const displays = { ...useSketchy.getState().displayUrls };
   let changed = false;
   for (const id of drop) {
     const url = urls[id];
-    if (!url) continue;
-    URL.revokeObjectURL(url);
-    delete urls[id];
-    changed = true;
+    if (url) {
+      URL.revokeObjectURL(url);
+      delete urls[id];
+      changed = true;
+    }
+    const display = displays[id];
+    if (display) {
+      URL.revokeObjectURL(display);
+      delete displays[id];
+      changed = true;
+    }
   }
-  if (changed) useSketchy.setState({ assetUrls: urls });
+  if (changed) useSketchy.setState({ assetUrls: urls, displayUrls: displays });
 }

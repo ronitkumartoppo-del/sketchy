@@ -21,5 +21,6 @@ Branch: `grok-development`
 | 1.4 Delete and bytes | Verified `bb45e80` | Deleting the last use removes the asset from the project. Undo in the same visit restores it. A reload drops bytes undo can no longer reach. |
 | 8.2 Frame connectors | Verified `eace451` | A frame PNG includes connectors that touch that frame. A connector between objects outside it is left out. The picture is still not a project. |
 | 3.1 Curves | Verified `26378d2` | Curve (B) on the board and in Image Studio stores a cubic Bézier. The picture is not flattened into the file. |
+| 9.1 Board bitmap | Verified in this commit | Photos larger than 560px on the long side are decoded smaller for the board. The stored file, Image Studio, and Save PNG stay full size. |
 
 Typecheck, production build, and browser QA are recorded in `DEVELOPMENT_LOG.md`.

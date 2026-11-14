@@ -32,7 +32,9 @@ function useHtmlImage(url: string | undefined): HTMLImageElement | null {
 
 export function BoardNode({ object, listening }: { object: BoardObject; listening: boolean }) {
   const navigate = useNavigate();
-  const url = useSketchy((state) => (object.type === "image" ? state.assetUrls[object.assetId] : undefined));
+  const url = useSketchy((state) =>
+    object.type === "image" ? (state.displayUrls[object.assetId] ?? state.assetUrls[object.assetId]) : undefined,
+  );
   const image = useHtmlImage(url);
   const drawings = useSketchy((state) =>
     object.type === "image" ? state.history.present.imageProjects[object.imageProjectId]?.drawings : undefined,

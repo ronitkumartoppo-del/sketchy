@@ -22,6 +22,7 @@ import { palette } from "../model/palette";
 interface SketchyStore {
   history: ReturnType<typeof createHistory<SketchyProject>>;
   assetUrls: Record<string, string>;
+  displayUrls: Record<string, string>;
   selection: string[];
   tool: Tool;
   stroke: string;
@@ -52,6 +53,7 @@ interface SketchyStore {
   newBoard: () => void;
   setBoardCamera: (camera: Camera) => void;
   rememberAssetUrl: (id: string, url: string) => void;
+  replaceDisplayUrls: (urls: Record<string, string>) => void;
   replaceObject: (object: BoardObject) => void;
 }
 
@@ -63,6 +65,7 @@ function pruneSelection(project: SketchyProject, selection: string[]): string[] 
 export const useSketchy = create<SketchyStore>((set, get) => ({
   history: createHistory(createProject()),
   assetUrls: {},
+  displayUrls: {},
   selection: [],
   tool: "select",
   stroke: palette.ink,
@@ -75,6 +78,7 @@ export const useSketchy = create<SketchyStore>((set, get) => ({
     set({
       history: createHistory(project),
       assetUrls: urls,
+      displayUrls: {},
       selection: [],
       ready: true,
     }),
@@ -215,6 +219,7 @@ export const useSketchy = create<SketchyStore>((set, get) => ({
       history: { ...state.history, present: setCamera(state.history.present, camera) },
     })),
   rememberAssetUrl: (id, url) => set((state) => ({ assetUrls: { ...state.assetUrls, [id]: url } })),
+  replaceDisplayUrls: (urls) => set({ displayUrls: urls }),
   replaceObject: (object) => {
     const { history } = get();
     const present = {

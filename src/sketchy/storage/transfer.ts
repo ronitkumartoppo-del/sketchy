@@ -1,3 +1,4 @@
+import { fillDisplayUrls } from "../canvas/display-bitmap";
 import { collectAssetIds, missingAssetIds } from "../model/document";
 import { useSketchy } from "../store/use-sketchy";
 import { idbGetBlob, idbPutBlob } from "./idb";
@@ -26,8 +27,10 @@ export async function openSketchyFile(file: Blob): Promise<{ name: string; missi
   for (const [id, blob] of opened.files) await idbPutBlob(id, blob);
   const previous = useSketchy.getState().assetUrls;
   for (const url of Object.values(previous)) URL.revokeObjectURL(url);
+  for (const url of Object.values(useSketchy.getState().displayUrls)) URL.revokeObjectURL(url);
   const urls: Record<string, string> = {};
   for (const [id, blob] of opened.files) urls[id] = URL.createObjectURL(blob);
   useSketchy.getState().hydrate(opened.project, urls);
+  void fillDisplayUrls(opened.project);
   return { name: opened.project.name, missing: opened.missing };
 }

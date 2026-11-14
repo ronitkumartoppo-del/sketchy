@@ -256,6 +256,23 @@ Not shipped: a pass on a physical phone. Per-anchor handle editing is not a sepa
 - `npm test` — pass (197 script tests, 94 TypeScript tests, 0 fail).
 - `npx tsc --noEmit` — pass.
 
+## 2026-11-14 — Smaller board bitmaps
+
+Shipped:
+
+- A photo whose longest side is over 560px is decoded with `createImageBitmap({ resizeWidth })` for the board only.
+- The asset width, height, and blob stay the original size.
+- Image Studio, Compare, and Save PNG keep using that original blob.
+
+Not shipped: a pass on a physical phone.
+
+### Verification
+
+- Model — 2000×1000 becomes 560×280. 80×40 stays 80×40.
+- `npm test` — pass (197 script tests, 95 TypeScript tests, 0 fail).
+- `npx tsc --noEmit` — pass.
+
+
 
 
 

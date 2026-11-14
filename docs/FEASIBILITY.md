@@ -51,7 +51,7 @@ Paint order for a final image:
 
 The board shows either the live composite or a cached preview blob. The preview is never the file the editor reopens.
 
-Large images: display size on the board is capped (longest edge 560). The asset keeps natural width and height. A later pass may decode a working bitmap with `createImageBitmap({ resizeWidth })` while the blob stays intact.
+Large images: the board decodes a working bitmap whose longest edge is 560. The asset keeps natural width and height, and the original blob is what Image Studio, Compare, and Save PNG read.
 
 ## E. Freeform selection and masking
 

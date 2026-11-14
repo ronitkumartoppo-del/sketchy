@@ -2,6 +2,8 @@ import { toast } from "sonner";
 import { activeBoard } from "../model/document";
 import { createId } from "../model/ids";
 import { screenToWorld } from "../model/geometry";
+import { displayPixelSize } from "../model/display";
+import { displayObjectUrl } from "./display-bitmap";
 import { insertImage } from "../model/ops";
 import type { AssetRecord } from "../model/types";
 import { useSketchy } from "../store/use-sketchy";
@@ -52,11 +54,12 @@ export async function importImageBlob(blob: Blob, name?: string, offset = 0): Pr
   const url = URL.createObjectURL(blob);
   const store = useSketchy.getState();
   store.rememberAssetUrl(assetId, url);
+  const displayUrl = await displayObjectUrl(blob, naturalW, naturalH);
+  if (displayUrl) useSketchy.getState().replaceDisplayUrls({ ...useSketchy.getState().displayUrls, [assetId]: displayUrl });
   const camera = activeBoard(store.history.present).camera;
-  const maxEdge = 560;
-  const scale = Math.min(1, maxEdge / Math.max(naturalW, naturalH));
-  const width = Math.max(8, Math.round(naturalW * scale));
-  const height = Math.max(8, Math.round(naturalH * scale));
+  const fitted = displayPixelSize(naturalW, naturalH);
+  const width = Math.max(8, fitted.width);
+  const height = Math.max(8, fitted.height);
   const center = screenToWorld(camera, { x: viewSize.width / 2, y: viewSize.height / 2 });
   const before = new Set(activeBoard(store.history.present).objects.map((object) => object.id));
   store.commit((project) =>
