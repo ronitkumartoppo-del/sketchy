@@ -8,7 +8,6 @@ import {
   findCompareSource,
   listCompareSources,
   slotLabel,
-  slotSkipsAdjustments,
   type CompareLayout,
   type CompareSlot,
 } from "../model/compare";
@@ -49,6 +48,17 @@ function sourcePaint(
     height,
     mask: projectEdit?.mask ?? null,
     drawings: projectEdit?.drawings ?? [],
+    adjustments: projectEdit?.adjustments ?? {
+      brightness: 0,
+      contrast: 0,
+      saturation: 0,
+      grayscale: false,
+      blur: 0,
+      pixelate: 1,
+      rotation: 0,
+      flipX: false,
+      flipY: false,
+    },
   };
 }
 
@@ -85,7 +95,6 @@ export function CompareView() {
   const imageB = useHtmlImage(sourceB ? urls[sourceB.assetId] : undefined);
   const editA = sourceA ? project.imageProjects[sourceA.imageProjectId] : undefined;
   const editB = sourceB ? project.imageProjects[sourceB.imageProjectId] : undefined;
-  const pendingAdjustments = pair ? slotSkipsAdjustments(project, pair.a) || slotSkipsAdjustments(project, pair.b) : false;
 
   frameRef.current = {
     layout,
@@ -222,7 +231,7 @@ export function CompareView() {
         <canvas ref={canvasRef} className="block h-full w-full" aria-label="Comparison" />
       </div>
       <div className="flex flex-col gap-3 border-t border-line bg-surface px-3 py-3">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
           <SlotControls label="A" sources={sources} slot={pair.a} onChange={(patch) => setSlot("a", patch)} />
           <SlotControls label="B" sources={sources} slot={pair.b} onChange={(patch) => setSlot("b", patch)} />
           <button type="button" onClick={download} className="min-h-11 rounded-full bg-ink px-4 py-2 text-sm font-medium text-paper">
@@ -231,7 +240,6 @@ export function CompareView() {
         </div>
         <p className="text-sm leading-relaxed text-muted">
           This PNG is a picture of the comparison. It is not a .sketchy project, and it does not replace the original images.
-          {pendingAdjustments ? " Brightness and the other adjustments are not drawn here yet." : ""}
         </p>
       </div>
     </div>
@@ -265,7 +273,7 @@ function SlotControls({
   onChange: (patch: Partial<CompareSlot>) => void;
 }) {
   return (
-    <div className="flex min-w-0 flex-1 items-center gap-2">
+    <div className="flex w-full min-w-0 items-center gap-2 md:w-auto md:flex-1">
       <span className="font-display text-lg italic">{label}</span>
       <select
         aria-label={`Image ${label}`}

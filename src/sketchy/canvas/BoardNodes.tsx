@@ -2,9 +2,10 @@ import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Arrow, Ellipse, Group, Image as KonvaImage, Line, Rect, Text } from "react-konva";
 import type Konva from "konva";
+import { viewNeedsComposite } from "../model/adjust";
 import { bakeBoardTransform } from "../model/geometry";
 import { palette } from "../model/palette";
-import type { BoardObject, DrawingObject, ImageMask } from "../model/types";
+import type { Adjustments, BoardObject, DrawingObject, ImageMask } from "../model/types";
 import { useSketchy } from "../store/use-sketchy";
 import { DrawingShape } from "./drawings";
 import { MaskedImage } from "./MaskedImage";
@@ -38,6 +39,9 @@ export function BoardNode({ object, listening }: { object: BoardObject; listenin
   );
   const mask = useSketchy((state) =>
     object.type === "image" ? (state.history.present.imageProjects[object.imageProjectId]?.mask ?? null) : null,
+  );
+  const adjustments = useSketchy((state) =>
+    object.type === "image" ? state.history.present.imageProjects[object.imageProjectId]?.adjustments : undefined,
   );
   const draggable = listening && !object.locked && object.id !== "draft";
 
@@ -106,6 +110,7 @@ export function BoardNode({ object, listening }: { object: BoardObject; listenin
         image={image}
         drawings={drawings}
         mask={mask}
+        adjustments={adjustments}
         sourceWidth={source?.width}
         sourceHeight={source?.height}
       />
@@ -124,6 +129,7 @@ function NodeShape({
   image,
   drawings,
   mask,
+  adjustments,
   sourceWidth,
   sourceHeight,
 }: {
@@ -131,6 +137,7 @@ function NodeShape({
   image: HTMLImageElement | null;
   drawings?: DrawingObject[];
   mask: ImageMask | null;
+  adjustments?: Adjustments;
   sourceWidth?: number;
   sourceHeight?: number;
 }) {
@@ -214,8 +221,15 @@ function NodeShape({
     case "image":
       return image ? (
         <>
-          {mask ? (
-            <MaskedImage key={JSON.stringify(mask)} image={image} width={object.width} height={object.height} mask={mask} />
+          {viewNeedsComposite(adjustments, mask) ? (
+            <MaskedImage
+              key={`${JSON.stringify(mask)}|${JSON.stringify(adjustments)}`}
+              image={image}
+              width={object.width}
+              height={object.height}
+              mask={mask}
+              adjustments={adjustments}
+            />
           ) : (
             <KonvaImage image={image} width={object.width} height={object.height} />
           )}

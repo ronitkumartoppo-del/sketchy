@@ -1,5 +1,5 @@
-import { defaultAdjustments, serializeProject } from "./document.ts";
-import type { Adjustments, ImageEditProject, SketchyProject } from "./types.ts";
+import { serializeProject } from "./document.ts";
+import type { SketchyProject } from "./types.ts";
 
 /** `original` is the imported bitmap. `edited` is the current mask and drawings. */
 export type CompareView = "original" | "edited";
@@ -128,30 +128,6 @@ export function clampFade(value: number): number {
 export function overlayByte(base: number, cover: number, amount: number): number {
   const t = clampFade(amount);
   return Math.round(base + (cover - base) * t);
-}
-
-export function adjustmentsAreDefault(adjustments: Adjustments): boolean {
-  const base = defaultAdjustments();
-  return (
-    adjustments.brightness === base.brightness &&
-    adjustments.contrast === base.contrast &&
-    adjustments.saturation === base.saturation &&
-    adjustments.grayscale === base.grayscale &&
-    adjustments.blur === base.blur &&
-    adjustments.pixelate === base.pixelate &&
-    adjustments.rotation === base.rotation &&
-    adjustments.flipX === base.flipX &&
-    adjustments.flipY === base.flipY
-  );
-}
-
-export function slotSkipsAdjustments(project: SketchyProject, slot: CompareSlot | undefined): boolean {
-  if (!slot || slot.view !== "edited") return false;
-  const source = listCompareSources(project).find((item) => item.objectId === slot.objectId);
-  if (!source) return false;
-  const edit: ImageEditProject | undefined = project.imageProjects[source.imageProjectId];
-  if (!edit) return false;
-  return !adjustmentsAreDefault(edit.adjustments);
 }
 
 /** Listing pictures for Compare must not rewrite the project. */

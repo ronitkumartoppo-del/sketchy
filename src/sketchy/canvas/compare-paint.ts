@@ -1,9 +1,7 @@
-import { compareStage, clampFade, type CompareLayout } from "../model/compare";
-import { denormalizePoints } from "../model/geometry";
-import { effectiveMaskMode } from "../model/mask";
+import { compareStage, clampFade, type CompareLayout, type CompareView } from "../model/compare";
 import { palette } from "../model/palette";
-import type { CompareView } from "../model/compare";
-import type { DrawingObject, ImageMask } from "../model/types";
+import type { Adjustments, DrawingObject, ImageMask } from "../model/types";
+import { paintPhoto } from "./raster";
 
 export interface SourcePaint {
   image: CanvasImageSource | null;
@@ -11,11 +9,12 @@ export interface SourcePaint {
   height: number;
   mask: ImageMask | null;
   drawings: DrawingObject[];
+  adjustments: Adjustments;
 }
 
 const LABEL_BAND = 40;
 
-/** Raster of one picture. Original skips the mask and the drawings. Does not touch the source image. */
+/** Raster of one picture. Original skips adjustments, the mask, and the drawings. Does not touch the source image. */
 export function renderSource(source: SourcePaint, view: CompareView): HTMLCanvasElement {
   const width = Math.max(1, Math.round(source.width));
   const height = Math.max(1, Math.round(source.height));
@@ -34,35 +33,18 @@ export function renderSource(source: SourcePaint, view: CompareView): HTMLCanvas
     return canvas;
   }
   ctx.drawImage(source.image, 0, 0, width, height);
-  if (view === "edited" && source.mask) applyMask(ctx, width, height, source.mask);
-  if (view === "edited" && source.drawings.length > 0) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(0, 0, width, height);
-    ctx.clip();
-    for (const drawing of source.drawings) paintDrawing(ctx, drawing);
-    ctx.restore();
+  if (view === "edited") {
+    paintPhoto(canvas, source.image, width, height, source.adjustments, source.mask);
+    if (source.drawings.length > 0) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, width, height);
+      ctx.clip();
+      for (const drawing of source.drawings) paintDrawing(ctx, drawing);
+      ctx.restore();
+    }
   }
   return canvas;
-}
-
-function applyMask(ctx: CanvasRenderingContext2D, width: number, height: number, mask: ImageMask) {
-  ctx.globalCompositeOperation = effectiveMaskMode(mask) === "remove-inside" ? "destination-out" : "destination-in";
-  ctx.beginPath();
-  if (mask.kind === "rect") {
-    ctx.rect(mask.x * width, mask.y * height, Math.max(0, mask.w * width), Math.max(0, mask.h * height));
-  } else {
-    const pts = denormalizePoints(mask.points, width, height);
-    if (pts.length < 6) {
-      ctx.globalCompositeOperation = "source-over";
-      return;
-    }
-    ctx.moveTo(pts[0] ?? 0, pts[1] ?? 0);
-    for (let i = 2; i < pts.length; i += 2) ctx.lineTo(pts[i] ?? 0, pts[i + 1] ?? 0);
-    ctx.closePath();
-  }
-  ctx.fill("evenodd");
-  ctx.globalCompositeOperation = "source-over";
 }
 
 function paintDrawing(ctx: CanvasRenderingContext2D, drawing: DrawingObject) {

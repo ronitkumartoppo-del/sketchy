@@ -104,7 +104,7 @@ Shipped:
 - Compare lines up two images already in the session, or the original file against the current crop and marks on one image.
 - Side by side, and an overlay with a fade. Original skips the mask and the drawings. Current paints the mask, then the drawings. The source bitmap is not written.
 - Download comparison PNG is a picture named `comparison.png`. It is not a `.sketchy` file.
-- If an image has non-default adjustments, Compare says they are not drawn yet.
+- At this checkpoint, adjustments were stored but not drawn.
 
 Not shipped: adjustments, groups, connectors, frames. A phone device pass is still not claimed.
 
@@ -118,7 +118,27 @@ Not shipped: adjustments, groups, connectors, frames. A phone device pass is sti
 - Dev smoke — desktop and mobile, canvas present, no console errors, no horizontal overflow.
 - Production build shows the empty board after the canvas chunk loads. The first automated snapshot caught “Opening Mindspace…”. A follow-up check showed one canvas, the empty board, and a clean console. Compare on that build showed the empty-state copy.
 
+## 2026-11-14 — Adjustments
+
+Shipped:
+
+- Image Studio can change brightness, contrast, color, blur, pixelate, grayscale, flip, and rotation.
+- The look is redrawn from those numbers. Paint order is the original bitmap, then the adjustments, then the mask, then the drawings.
+- Mindspace and Compare use the same redraw. Compare’s Original view skips it.
+- Undo returns the previous look. Reset clears it. The original blob is not rewritten.
+
+Not shipped: groups, connectors, frames. A phone device pass is still not claimed.
+
+### Verification
+
+- Model — a filter string is omitted when the controls are at rest. Setting brightness and a flip does not change `byteLength` or the previous project.
+- Browser — brightness at the dark end turned the cobalt picture black (0 cobalt pixels, darkest `(0,0,0)`). Undo restored cobalt `(35,71,214)` and the ink stroke, and the slider returned to 0. Compare Original of that image was cobalt again. Both stored blobs stayed 551 bytes.
+- `npm test` — pass (197 script tests, 84 TypeScript tests, 0 fail).
+- `npx tsc --noEmit` — pass.
+- `npm run build` — pass.
+- Phone width — Compare and Image Studio did not widen the page. The Original control was the thing under the tap.
+
 ## Resume
 
-Next checkpoint: adjustments on the image edit project. Do not flatten the asset. Do not treat a PNG or a comparison picture as a project. Branch `grok-development`.
+Next checkpoint: groups, connectors, or design frames. Do not flatten the asset. Do not treat a PNG or a comparison picture as a project. Branch `grok-development`.
 

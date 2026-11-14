@@ -9,7 +9,7 @@ The required loop can be built in the browser with no paid API and no account.
 
 Open Mindspace, paste an image, select it, open Image Studio, draw independent objects, freeform-crop, return to the board, export a PNG, save a `.sketchy` file, and reopen it with the source, mask, and drawings still editable.
 
-Image Studio drawings, freeform crop, `.sketchy` import/export, and Compare are implemented. A flattened PNG is not a project. Compare’s download is a picture of the comparison, not a `.sketchy` file. The file round-trip keeps the mask, the drawings, and the original bytes. Adjustments are stored but not drawn yet.
+Image Studio drawings, freeform crop, adjustments, `.sketchy` import/export, and Compare are implemented. Adjustments are redrawn from the edit project and are not written into the original file. A flattened PNG is not a project. Compare’s download is a picture of the comparison, not a `.sketchy` file. The file round-trip keeps the mask, the drawings, the adjustments, and the original bytes.
 
 ## B. Architecture for each step
 
@@ -117,6 +117,7 @@ Browser, not just the model:
 - A lasso crop removed the unselected half of an image on the board, left a drawing in place, and undo restored the original pixels.
 - Download `.sketchy`, wipe the browser store, open the file, and reload. The crop and the drawing were still there. A PNG is rejected as a project by the parser.
 - Compare: one image showed the original (solid cobalt, no stroke) beside the current view (same cobalt plus the ink stroke). Overlay fade 0 hid the stroke and fade 100 showed it. Two images sat side by side (cobalt with the stroke, solid coral). The downloaded file was a PNG. Asset byte lengths stayed 551.
+- Brightness pulled a cobalt image to black in Image Studio. Undo restored cobalt `(35,71,214)` and the ink stroke. Compare’s Original view stayed cobalt while Current was black. Both original blobs stayed 551 bytes.
 
 Not yet run, and not claimed:
 

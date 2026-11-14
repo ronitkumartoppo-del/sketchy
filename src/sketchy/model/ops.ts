@@ -1,6 +1,7 @@
 import { activeBoard, emptyBoard, emptyImageProject } from "./document.ts";
 import type {
   AssetRecord,
+  Adjustments,
   BoardObject,
   Camera,
   DrawingObject,
@@ -357,6 +358,14 @@ export function setImageMask(
   mask: ImageMask | null,
 ): SketchyProject {
   return updateImageProject(project, imageProjectId, (edit) => ({ ...edit, mask }));
+}
+
+export function setImageAdjustments(
+  project: SketchyProject,
+  imageProjectId: string,
+  adjustments: Adjustments,
+): SketchyProject {
+  return updateImageProject(project, imageProjectId, (edit) => ({ ...edit, adjustments }));
 }
 
 /** Keep the caller's view still when undo restores an older camera or board. */

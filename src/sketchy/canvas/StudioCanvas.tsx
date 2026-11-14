@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Image as KonvaImage, Layer, Line, Rect, Shape, Stage, Transformer } from "react-konva";
 import type Konva from "konva";
 import { denormalizePoints, screenToWorld, zoomAt, zoomBy, type Point } from "../model/geometry";
+import { viewNeedsComposite } from "../model/adjust";
 import { createId } from "../model/ids";
 import { polygonMaskFromPixels, rectMaskFromPixels, type CropMode } from "../model/mask";
 import { addDrawing, duplicateDrawings, removeDrawings, recolorDrawings, replaceDrawing, setImageMask } from "../model/ops";
@@ -10,6 +11,7 @@ import { DEFAULT_STROKE_WIDTH, SWATCHES, palette } from "../model/palette";
 import type { Camera, DrawingObject, ImageMask, Tool } from "../model/types";
 import { useSketchy } from "../store/use-sketchy";
 import { IconButton } from "../ui/IconButton";
+import { AdjustBar } from "../ui/AdjustBar";
 import { StudioRail, type CropTool } from "../ui/StudioRail";
 import { DrawingNode, useHtmlImage } from "./drawings";
 import { MaskedImage } from "./MaskedImage";
@@ -320,6 +322,7 @@ export function StudioCanvas({ editId }: { editId: string }) {
   return (
     <div className="flex h-full min-h-0 flex-col-reverse md:flex-row">
       <StudioRail crop={cropTool} onCrop={chooseCrop} />
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <div ref={hostRef} className={"relative min-h-0 min-w-0 flex-1 touch-none " + cursor}>
         {size.width > 0 && camera && (
           <Stage
@@ -345,8 +348,15 @@ export function StudioCanvas({ editId }: { editId: string }) {
               <Rect name="paper" x={-200000} y={-200000} width={400000} height={400000} fill={palette.paper} />
               {mask ? <Checker width={asset.width} height={asset.height} /> : null}
               {image ? (
-                mask ? (
-                  <MaskedImage key={JSON.stringify(mask)} image={image} width={asset.width} height={asset.height} mask={mask} />
+                viewNeedsComposite(edit.adjustments, mask) ? (
+                  <MaskedImage
+                    key={`${JSON.stringify(mask)}|${JSON.stringify(edit.adjustments)}`}
+                    image={image}
+                    width={asset.width}
+                    height={asset.height}
+                    mask={mask}
+                    adjustments={edit.adjustments}
+                  />
                 ) : (
                   <KonvaImage name="photo" image={image} width={asset.width} height={asset.height} />
                 )
@@ -561,6 +571,8 @@ export function StudioCanvas({ editId }: { editId: string }) {
             The original file is missing from this browser. Drawings are still stored.
           </p>
         ) : null}
+      </div>
+      <AdjustBar editId={editId} adjustments={edit.adjustments} />
       </div>
     </div>
   );

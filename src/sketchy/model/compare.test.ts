@@ -9,9 +9,8 @@ import {
   defaultComparePair,
   listCompareSources,
   overlayByte,
-  slotSkipsAdjustments,
 } from "./compare.ts";
-import { createProject, defaultAdjustments } from "./document.ts";
+import { createProject } from "./document.ts";
 import { addDrawing, insertImage } from "./ops.ts";
 import type { DrawingObject, IdFactory } from "./types.ts";
 
@@ -118,25 +117,5 @@ describe("compare", () => {
     assert.equal(clampFade(Number.NaN), 0);
     assert.equal(COMPARISON_FILENAME.endsWith(".png"), true);
     assert.equal(COMPARISON_FILENAME.includes("sketchy"), false);
-  });
-
-  it("does not pretend adjustments are visible", () => {
-    const createId = ids();
-    let project = createProject({ now: "2026-11-14T00:00:00.000Z", createId });
-    project = image(project, createId, "asset_a", "only.png", 10);
-    const source = listCompareSources(project)[0]!;
-    const slot = { objectId: source.objectId, view: "edited" as const };
-    assert.equal(slotSkipsAdjustments(project, slot), false);
-    const edit = project.imageProjects[source.imageProjectId]!;
-    project = {
-      ...project,
-      imageProjects: {
-        ...project.imageProjects,
-        [source.imageProjectId]: { ...edit, adjustments: { ...defaultAdjustments(), brightness: 0.4 } },
-      },
-    };
-    assert.equal(slotSkipsAdjustments(project, slot), true);
-    assert.equal(slotSkipsAdjustments(project, { ...slot, view: "original" }), false);
-    assert.equal(project.assets.asset_a?.byteLength, 10);
   });
 });
