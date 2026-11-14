@@ -101,7 +101,7 @@ export function recolorObjects(
       ...board,
       objects: board.objects.map((object) => {
         if (!selected.has(object.id) || object.type === "image" || object.type === "group") return object;
-        if (object.type === "pen" || object.type === "arrow" || object.type === "connector") {
+        if (object.type === "pen" || object.type === "arrow" || object.type === "curve" || object.type === "connector") {
           return patch.stroke ? { ...object, stroke: patch.stroke } : object;
         }
         if (object.type === "text") {

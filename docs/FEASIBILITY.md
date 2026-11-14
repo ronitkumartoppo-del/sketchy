@@ -79,7 +79,7 @@ settings/export.json
 
 ## G. Technical risks and limitations
 
-- Konva has no editable Bézier node. Curves will be a custom `Shape` plus anchor points stored on the drawing object.
+- A curve is a cubic Bézier: start, two controls, and end, stored on the object. The controls bow off the chord. Konva strokes that path. It is not baked into the bitmap.
 - Transformer flips are baked with `Math.abs` on width and height so a negative scale does not stick. Explicit flip lives on `adjustments`, not on the board transformer.
 - Pinch-zoom is custom. Konva does not ship it.
 - Two-finger gestures and one-finger drawing must not scroll the page (`touch-action: none`, `preventDefault` on the wheel).

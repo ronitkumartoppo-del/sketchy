@@ -123,6 +123,14 @@ export interface PenObject extends BaseObject {
   strokeWidth: number;
 }
 
+/** Cubic Bézier. `points` is start, two controls, and end, relative to x,y. */
+export interface CurveObject extends BaseObject {
+  type: "curve";
+  points: number[];
+  stroke: string;
+  strokeWidth: number;
+}
+
 export interface TextObject extends BaseObject {
   type: "text";
   width: number;
@@ -179,6 +187,7 @@ export type BoardObject =
   | EllipseObject
   | ArrowObject
   | PenObject
+  | CurveObject
   | TextObject
   | NoteObject
   | ImageObject
@@ -210,6 +219,7 @@ export type Tool =
   | "select"
   | "pan"
   | "pen"
+  | "curve"
   | "rect"
   | "ellipse"
   | "arrow"

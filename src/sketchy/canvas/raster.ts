@@ -130,6 +130,14 @@ export function paintDrawing(ctx: CanvasRenderingContext2D, drawing: DrawingObje
     ctx.font = `${drawing.fontSize ?? 28}px Outfit, sans-serif`;
     ctx.textBaseline = "top";
     ctx.fillText(drawing.text ?? "", 0, 0, drawing.width ?? 160);
+  } else if (drawing.kind === "bezier") {
+    const pts = drawing.points ?? [];
+    if (pts.length >= 8 && canStroke) {
+      ctx.beginPath();
+      ctx.moveTo(pts[0] ?? 0, pts[1] ?? 0);
+      ctx.bezierCurveTo(pts[2] ?? 0, pts[3] ?? 0, pts[4] ?? 0, pts[5] ?? 0, pts[6] ?? 0, pts[7] ?? 0);
+      ctx.stroke();
+    }
   } else if (drawing.kind === "polygon" || drawing.kind === "arrow" || drawing.points) {
     const closed = drawing.kind === "polygon";
     trace(ctx, drawing.points ?? [], closed);

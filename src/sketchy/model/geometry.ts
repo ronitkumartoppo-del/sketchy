@@ -144,6 +144,7 @@ export function bakeBoardTransform(
       };
     case "pen":
     case "arrow":
+    case "curve":
       return { ...obj, ...place, points: scaledPoints(obj.points, t.scaleX, t.scaleY) };
     case "group":
     case "frame":
@@ -200,7 +201,8 @@ export function boundsOf(object: BoardObject): Box {
     case "text":
       return { x: object.x, y: object.y, w: object.width, h: Math.max(8, object.fontSize * 1.25) };
     case "pen":
-    case "arrow": {
+    case "arrow":
+    case "curve": {
       let minX = Infinity;
       let minY = Infinity;
       let maxX = -Infinity;

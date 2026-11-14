@@ -10,6 +10,7 @@ import { palette } from "../model/palette";
 import type { Adjustments, BoardObject, DrawingObject, FrameObject, GroupObject, ImageMask } from "../model/types";
 import { useSketchy } from "../store/use-sketchy";
 import { DrawingShape } from "./drawings";
+import { CurveShape } from "./CurveShape";
 import { MaskedImage } from "./MaskedImage";
 
 function useHtmlImage(url: string | undefined): HTMLImageElement | null {
@@ -264,6 +265,8 @@ function NodeShape({
           lineCap="round"
         />
       );
+    case "curve":
+      return <CurveShape points={object.points} stroke={object.stroke} strokeWidth={object.strokeWidth} />;
     case "pen":
       return (
         <Line

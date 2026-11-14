@@ -239,6 +239,24 @@ Not shipped: a pass on a physical phone.
 - Dev smoke — desktop and mobile, canvas present, no console errors, no horizontal overflow.
 - Production build shows the empty board after the canvas chunk loads.
 
+## 2026-11-14 — Curves
+
+Shipped:
+
+- Curve (B) on Mindspace and in Image Studio.
+- A drag stores a cubic Bézier: start, two controls bowed off the chord, and end.
+- On the board the type is `curve`. In Image Studio the drawing kind is `bezier`, in source pixels.
+- Save PNG paints that curve after the photo. The original file is not rewritten.
+
+Not shipped: a pass on a physical phone. Per-anchor handle editing is not a separate mode; the whole curve moves, scales, and rotates with the transformer.
+
+### Verification
+
+- Model — a 120px horizontal drag bows more than 10px off the chord at the midpoint. The object survives `parseProject`.
+- `npm test` — pass (197 script tests, 94 TypeScript tests, 0 fail).
+- `npx tsc --noEmit` — pass.
+
+
 
 
 

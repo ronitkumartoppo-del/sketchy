@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Image as KonvaImage, Layer, Line, Rect, Shape, Stage, Transformer } from "react-konva";
 import type Konva from "konva";
 import { denormalizePoints, screenToWorld, zoomAt, zoomBy, type Point } from "../model/geometry";
+import { curvePoints } from "../model/curve";
 import { viewNeedsComposite } from "../model/adjust";
 import { createId } from "../model/ids";
 import { polygonMaskFromPixels, rectMaskFromPixels, type CropMode } from "../model/mask";
@@ -37,7 +38,7 @@ const chooseCropSink = { current: null as ((tool: CropTool | null) => void) | nu
 const setPolySink = { current: null as ((points: number[] | null) => void) | null };
 const setLassoSink = { current: null as ((points: number[] | null) => void) | null };
 
-const DRAW_TOOLS = new Set<Tool>(["pen", "rect", "ellipse", "arrow", "text"]);
+const DRAW_TOOLS = new Set<Tool>(["pen", "curve", "rect", "ellipse", "arrow", "text"]);
 
 export function StudioCanvas({ editId }: { editId: string }) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -261,6 +262,7 @@ export function StudioCanvas({ editId }: { editId: string }) {
         v: "select",
         h: "pan",
         p: "pen",
+        b: "curve",
         r: "rect",
         o: "ellipse",
         a: "arrow",
@@ -835,6 +837,7 @@ function placeText(
 function initialDraft(tool: Tool, origin: Point, stroke: string, fill: string, strokeWidth: number): DrawingObject {
   const base = { id: "draft", x: origin.x, y: origin.y, rotation: 0, stroke, fill, strokeWidth, opacity: 1 };
   if (tool === "arrow") return { ...base, kind: "arrow", points: [0, 0, 0, 0] };
+  if (tool === "curve") return { ...base, kind: "bezier", points: curvePoints({ x: 0, y: 0 }) };
   if (tool === "pen") return { ...base, kind: "freehand", points: [0, 0] };
   if (tool === "ellipse") return { ...base, kind: "ellipse", width: 0, height: 0 };
   return { ...base, kind: "rect", width: 0, height: 0 };
@@ -855,6 +858,20 @@ function resizeDraft(origin: Point, tool: Tool, world: Point, stroke: string, fi
       points: [0, 0, world.x - origin.x, world.y - origin.y],
       stroke,
       fill: stroke,
+      strokeWidth,
+      opacity: 1,
+    };
+  }
+  if (tool === "curve") {
+    return {
+      id: "draft",
+      kind: "bezier",
+      x: origin.x,
+      y: origin.y,
+      rotation: 0,
+      points: curvePoints({ x: world.x - origin.x, y: world.y - origin.y }),
+      stroke,
+      fill: "transparent",
       strokeWidth,
       opacity: 1,
     };

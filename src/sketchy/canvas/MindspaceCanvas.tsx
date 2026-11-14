@@ -5,6 +5,7 @@ import type Konva from "konva";
 import { toast } from "sonner";
 import { activeBoard } from "../model/document";
 import { screenToWorld, rootObjects, worldOrigin, zoomAt, zoomBy, type Point } from "../model/geometry";
+import { curvePoints } from "../model/curve";
 import { FRAME_PRESETS } from "../model/frames";
 import { PICTURE_FILES } from "../model/export";
 import { createId } from "../model/ids";
@@ -208,6 +209,7 @@ export function MindspaceCanvas() {
         v: "select",
         h: "pan",
         p: "pen",
+        b: "curve",
         r: "rect",
         o: "ellipse",
         a: "arrow",
@@ -597,6 +599,9 @@ function initialDraft(tool: Tool, origin: Point, stroke: string, fill: string): 
   if (tool === "arrow") {
     return { ...base, type: "arrow", points: [0, 0, 0, 0], stroke, strokeWidth: DEFAULT_STROKE_WIDTH };
   }
+  if (tool === "curve") {
+    return { ...base, type: "curve", points: curvePoints({ x: 0, y: 0 }), stroke, strokeWidth: DEFAULT_STROKE_WIDTH };
+  }
   if (tool === "pen") {
     return { ...base, type: "pen", points: [0, 0], stroke, strokeWidth: DEFAULT_STROKE_WIDTH };
   }
@@ -620,6 +625,19 @@ function resizeDraft(origin: Point, tool: Tool, world: Point, stroke: string, fi
       rotation: 0,
       locked: false,
       points: [0, 0, world.x - origin.x, world.y - origin.y],
+      stroke,
+      strokeWidth: DEFAULT_STROKE_WIDTH,
+    };
+  }
+  if (tool === "curve") {
+    return {
+      id: "draft",
+      type: "curve",
+      x: origin.x,
+      y: origin.y,
+      rotation: 0,
+      locked: false,
+      points: curvePoints({ x: world.x - origin.x, y: world.y - origin.y }),
       stroke,
       strokeWidth: DEFAULT_STROKE_WIDTH,
     };
@@ -656,7 +674,7 @@ function resizeDraft(origin: Point, tool: Tool, world: Point, stroke: string, fi
 
 function isDrawable(object: BoardObject): boolean {
   if (object.type === "rect" || object.type === "ellipse") return object.width >= 4 || object.height >= 4;
-  if (object.type === "pen" || object.type === "arrow") {
+  if (object.type === "pen" || object.type === "arrow" || object.type === "curve") {
     const pts = object.points;
     const dx = (pts[pts.length - 2] ?? 0) - (pts[0] ?? 0);
     const dy = (pts[pts.length - 1] ?? 0) - (pts[1] ?? 0);

@@ -1,4 +1,4 @@
-import { ArrowUpRight, Circle, Crop, Hand, Lasso, MousePointer2, Pentagon, Pencil, Square, Type } from "lucide-react";
+import { ArrowUpRight, Circle, Crop, Hand, Lasso, MousePointer2, Pentagon, Pencil, Spline, Square, Type } from "lucide-react";
 import type { Tool } from "../model/types";
 import { useSketchy } from "../store/use-sketchy";
 import { IconButton } from "./IconButton";
@@ -7,6 +7,7 @@ const TOOLS: { id: Tool; label: string; icon: typeof MousePointer2 }[] = [
   { id: "select", label: "Select (V)", icon: MousePointer2 },
   { id: "pan", label: "Pan (H)", icon: Hand },
   { id: "pen", label: "Pen (P)", icon: Pencil },
+  { id: "curve", label: "Curve (B)", icon: Spline },
   { id: "rect", label: "Rectangle (R)", icon: Square },
   { id: "ellipse", label: "Ellipse (O)", icon: Circle },
   { id: "arrow", label: "Arrow (A)", icon: ArrowUpRight },

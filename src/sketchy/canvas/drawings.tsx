@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Arrow, Ellipse, Group, Line, Rect, Text } from "react-konva";
 import type Konva from "konva";
 import { bakeDrawingTransform } from "../model/geometry";
+import { CurveShape } from "./CurveShape";
 import type { DrawingObject } from "../model/types";
 
 export function useHtmlImage(url: string | undefined): HTMLImageElement | null {
@@ -84,6 +85,15 @@ export function DrawingShape({ drawing }: { drawing: DrawingObject }) {
           stroke={drawing.stroke}
           strokeWidth={drawing.strokeWidth}
           hitStrokeWidth={hit}
+          opacity={opacity}
+        />
+      );
+    case "bezier":
+      return (
+        <CurveShape
+          points={drawing.points ?? []}
+          stroke={drawing.stroke}
+          strokeWidth={drawing.strokeWidth}
           opacity={opacity}
         />
       );

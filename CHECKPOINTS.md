@@ -20,5 +20,6 @@ Branch: `grok-development`
 | 8.1 Picture export | Verified `883d3b6` | An image PNG uses the original pixel size. A frame PNG is the artboard at 2×. Neither file is a project. Original bytes stay put. |
 | 1.4 Delete and bytes | Verified `bb45e80` | Deleting the last use removes the asset from the project. Undo in the same visit restores it. A reload drops bytes undo can no longer reach. |
 | 8.2 Frame connectors | Verified `eace451` | A frame PNG includes connectors that touch that frame. A connector between objects outside it is left out. The picture is still not a project. |
+| 3.1 Curves | Verified in this commit | Curve (B) on the board and in Image Studio stores a cubic Bézier. The picture is not flattened into the file. |
 
 Typecheck, production build, and browser QA are recorded in `DEVELOPMENT_LOG.md`.

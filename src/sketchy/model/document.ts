@@ -102,6 +102,7 @@ const OBJECT_TYPES = new Set([
   "ellipse",
   "arrow",
   "pen",
+  "curve",
   "text",
   "note",
   "image",
@@ -144,6 +145,9 @@ export function parseProject(raw: string): SketchyProject {
         (!Array.isArray(object.childIds) || object.childIds.some((id) => typeof id !== "string"))
       ) {
         throw new Error("Sketchy group is missing its members");
+      }
+      if (object.type === "curve" && (!Array.isArray(object.points) || object.points.length < 8)) {
+        throw new Error("Sketchy curve is missing its anchors");
       }
       if (object.type === "connector" && (typeof object.fromId !== "string" || typeof object.toId !== "string")) {
         throw new Error("Sketchy connector is missing an end");
