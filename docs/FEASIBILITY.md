@@ -81,7 +81,7 @@ settings/export.json
 
 - A curve is a cubic Bézier: start, two controls, and end, stored on the object. The controls bow off the chord. Konva strokes that path. It is not baked into the bitmap.
 - Transformer flips are baked with `Math.abs` on width and height so a negative scale does not stick. Explicit flip lives on `adjustments`, not on the board transformer.
-- Pinch-zoom is custom. Konva does not ship it.
+- Pinch-zoom is custom. Two fingers scale around their midpoint and cancel a one-finger stroke. `touchmove` on the board does not scroll the page. This was checked with pointer math and a browser, not a physical phone.
 - Two-finger gestures and one-finger drawing must not scroll the page (`touch-action: none`, `preventDefault` on the wheel).
 - History is full JSON snapshots. Fine for vector data. It will get heavy if someone snapshots pixel buffers. Blobs stay outside history.
 - Deleting the last use of an image removes that asset from the current project, so a downloaded file does not keep it. Undo snapshots still name the asset, and the blob stays until no snapshot does. A reload does not restore undo, so the bytes are dropped then. A second image that shares the file keeps it.

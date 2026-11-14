@@ -2,7 +2,8 @@ import { Copy, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Image as KonvaImage, Layer, Line, Rect, Shape, Stage, Transformer } from "react-konva";
 import type Konva from "konva";
-import { denormalizePoints, screenToWorld, zoomAt, zoomBy, type Point } from "../model/geometry";
+import { denormalizePoints, screenToWorld, zoomAt, type Point } from "../model/geometry";
+import { pinchFrom, pinchMove, type Pinch } from "../model/gestures";
 import { curvePoints } from "../model/curve";
 import { viewNeedsComposite } from "../model/adjust";
 import { createId } from "../model/ids";
@@ -139,47 +140,48 @@ export function StudioCanvas({ editId }: { editId: string }) {
       });
     };
     const pointers = new Map<number, Point>();
-    let lastDistance = 0;
-    let lastCenter = { x: 0, y: 0 };
+    let pinch: Pinch | null = null;
     const remember = (event: PointerEvent) => {
       const rect = element.getBoundingClientRect();
       pointers.set(event.pointerId, { x: event.clientX - rect.left, y: event.clientY - rect.top });
     };
     const onPointerDown = (event: PointerEvent) => {
       remember(event);
-      if (pointers.size !== 2) return;
+      const next = pinchFrom([...pointers.values()]);
+      if (!next) return;
       pinchRef.current = true;
       dragRef.current = null;
       draftRef.current = null;
       setDraft(null);
-      const [a, b] = [...pointers.values()];
-      lastDistance = Math.hypot(a!.x - b!.x, a!.y - b!.y);
-      lastCenter = { x: (a!.x + b!.x) / 2, y: (a!.y + b!.y) / 2 };
+      pinch = next;
     };
     const onPointerMove = (event: PointerEvent) => {
       if (!pointers.has(event.pointerId)) return;
       remember(event);
-      if (pointers.size !== 2 || lastDistance <= 0) return;
+      if (!pinch) return;
+      const moved = pinchMove(cameraRef.current, pinch, [...pointers.values()]);
+      if (!moved) return;
       event.preventDefault();
-      const [a, b] = [...pointers.values()];
-      const distance = Math.hypot(a!.x - b!.x, a!.y - b!.y);
-      const center = { x: (a!.x + b!.x) / 2, y: (a!.y + b!.y) / 2 };
-      const zoomed = zoomBy(cameraRef.current, center, distance / lastDistance);
-      publish({ ...zoomed, x: zoomed.x + (center.x - lastCenter.x), y: zoomed.y + (center.y - lastCenter.y) });
-      lastDistance = distance;
-      lastCenter = center;
+      pinch = moved.pinch;
+      publish(moved.camera);
     };
     const onPointerUp = (event: PointerEvent) => {
       pointers.delete(event.pointerId);
-      if (pointers.size < 2) pinchRef.current = false;
+      pinch = pinchFrom([...pointers.values()]);
+      if (!pinch) pinchRef.current = false;
+    };
+    const onTouchMove = (event: TouchEvent) => {
+      if (event.touches.length > 0) event.preventDefault();
     };
     element.addEventListener("wheel", onWheel, { passive: false });
+    element.addEventListener("touchmove", onTouchMove, { passive: false });
     element.addEventListener("pointerdown", onPointerDown);
     element.addEventListener("pointermove", onPointerMove, { passive: false });
     element.addEventListener("pointerup", onPointerUp);
     element.addEventListener("pointercancel", onPointerUp);
     return () => {
       element.removeEventListener("wheel", onWheel);
+      element.removeEventListener("touchmove", onTouchMove);
       element.removeEventListener("pointerdown", onPointerDown);
       element.removeEventListener("pointermove", onPointerMove);
       element.removeEventListener("pointerup", onPointerUp);

@@ -17,7 +17,7 @@ Sketchy is a browser workspace for arranging images, marking them up, and compar
 
 ## Not built yet
 
-A pass on a physical phone. The narrow layout is checked in a browser, not on a device. See [docs/FEASIBILITY.md](docs/FEASIBILITY.md).
+A pass on a physical phone. Two-finger pinch is checked with pointer events in a browser, not on a device. The narrow layout is also checked in a browser. See [docs/FEASIBILITY.md](docs/FEASIBILITY.md).
 
 ## Run
 

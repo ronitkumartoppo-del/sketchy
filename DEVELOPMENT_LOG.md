@@ -272,6 +272,21 @@ Not shipped: a pass on a physical phone.
 - `npm test` — pass (197 script tests, 95 TypeScript tests, 0 fail).
 - `npx tsc --noEmit` — pass.
 
+## 2026-11-14 — Two-finger pinch
+
+Shipped:
+
+- Mindspace and Image Studio use the same pinch. Two fingers scale around the midpoint and cancel a stroke that the first finger started.
+- A touch moving on the board or the studio does not scroll the page.
+- One finger still draws. A physical phone was not used.
+
+### Verification
+
+- Model — one point does not start a pinch. Spreading 100px to 200px doubles the scale, and the world point under the old midpoint stays under the new midpoint.
+- `npm test` — pass (197 script tests, 96 TypeScript tests, 0 fail).
+- `npx tsc --noEmit` — pass.
+
+
 
 
 
